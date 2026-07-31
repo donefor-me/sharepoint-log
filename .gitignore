@@ -1,0 +1,16 @@
+.DS_Store
+.vscode/
+.idea/
+
+node_modules
+.env
+
+*.pem
+*.key
+*.pfx
+*.p12
+*.cer
+*.crt
+
+coverage/
+.nyc_output/
