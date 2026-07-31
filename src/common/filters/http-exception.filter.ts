@@ -10,6 +10,13 @@ import { ApiResponse } from '../interfaces/api-response.interface'
 
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
+  /**
+   * Catches exceptions thrown across the application and formats the error response.
+   * Translates NestJS HttpExceptions and unhandled errors into a consistent JSON structure.
+   *
+   * @param {unknown} exception - The exception that was thrown.
+   * @param {ArgumentsHost} host - The arguments host containing the execution context.
+   */
   catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp()
     const response = ctx.getResponse<Response>()

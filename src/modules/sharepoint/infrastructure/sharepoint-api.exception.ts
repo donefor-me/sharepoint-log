@@ -4,7 +4,7 @@ export class SharepointApiException extends HttpException {
   constructor(message: string, rawError?: any) {
     super(
       {
-        message: 'Lỗi giao tiếp với API Sharepoint',
+        message: 'SharePoint API communication error',
         error: message,
         details: rawError,
       },

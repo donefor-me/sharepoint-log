@@ -15,6 +15,12 @@ export class SharepointTokenCacheRepository {
     private readonly repository: Repository<SharepointTokenCache>,
   ) {}
 
+  /**
+   * Retrieves a valid SharePoint access token from the database cache.
+   * Checks expiration time to ensure the token is still valid.
+   *
+   * @returns {Promise<string | null>} The valid token, or null if not found or expired.
+   */
   async getValidToken(): Promise<string | null> {
     const cache = await this.repository.findOne({
       where: { id: DEFAULT_CACHE_ID },
@@ -30,6 +36,13 @@ export class SharepointTokenCacheRepository {
     return null
   }
 
+  /**
+   * Saves a newly acquired SharePoint access token to the database cache.
+   * Calculates and stores the expiration time based on the token's lifetime.
+   *
+   * @param {SharepointAuthResponseDto} data - The authentication response containing the token.
+   * @returns {Promise<void>}
+   */
   async saveToken(data: SharepointAuthResponseDto): Promise<void> {
     const newCache = new SharepointTokenCache()
     newCache.id = DEFAULT_CACHE_ID

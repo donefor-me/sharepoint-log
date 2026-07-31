@@ -17,6 +17,13 @@ export const envSchema = z.object({
 
 export type EnvironmentVariables = z.infer<typeof envSchema>
 
+/**
+ * Validates the environment variables against the defined schema.
+ *
+ * @param {Record<string, unknown>} config - The raw configuration object to validate.
+ * @returns {EnvironmentVariables} The validated and typed environment variables.
+ * @throws {Error} If validation fails.
+ */
 export function validate(config: Record<string, unknown>) {
   const result = envSchema.safeParse(config)
 

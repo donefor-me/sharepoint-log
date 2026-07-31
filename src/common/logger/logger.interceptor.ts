@@ -12,6 +12,14 @@ import { Logger } from './logger.service'
 export class LoggerInterceptor implements NestInterceptor {
   constructor(private readonly logger: Logger) {}
 
+  /**
+   * Intercepts incoming HTTP requests to log their start and end times,
+   * along with the HTTP status code and total execution time.
+   *
+   * @param {ExecutionContext} context - The execution context providing details about the current request.
+   * @param {CallHandler} next - The call handler to continue the execution flow.
+   * @returns {Observable<any>} An observable representing the request response.
+   */
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const req = context.switchToHttp().getRequest()
     const { method, url } = req

@@ -4,6 +4,12 @@ import { TransformInterceptor } from './common/interceptors/transform.intercepto
 import { HttpExceptionFilter } from './common/filters/http-exception.filter'
 import { Logger } from './common/logger/logger.service'
 
+/**
+ * Bootstraps the NestJS application.
+ * Initializes the app, configures global pipes/filters, and starts listening on the configured port.
+ *
+ * @returns {Promise<void>}
+ */
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     bufferLogs: true,

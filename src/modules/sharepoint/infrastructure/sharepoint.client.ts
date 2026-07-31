@@ -4,6 +4,11 @@ import { ConfigService } from '@nestjs/config'
 import * as qs from 'qs'
 import { SharepointAuthResponseDto } from './sharepoint-auth-response.dto'
 import { SharepointConnectionModel } from './sharepoint-connection.model'
+import {
+  SharepointSubscriptionDto,
+  SharepointContentDto,
+  SharepointActivityDto,
+} from './sharepoint-management.dto'
 import { SharepointApiException } from './sharepoint-api.exception'
 import { Logger } from 'src/common/logger/logger.service'
 
@@ -20,6 +25,13 @@ export class SharepointClient {
     this.logger.setContext(SharepointClient.name)
   }
 
+  /**
+   * Authenticates with SharePoint API via Azure AD.
+   * Uses cached token if valid; otherwise, requests a new one using client credentials.
+   *
+   * @returns {Promise<SharepointConnectionModel>} An object containing the connection status and the access token.
+   * @throws {SharepointApiException} If configuration is missing or authentication fails.
+   */
   async authenticate(): Promise<SharepointConnectionModel> {
     const cachedToken = await this.tokenCacheRepository.getValidToken()
     if (cachedToken) {
@@ -34,7 +46,7 @@ export class SharepointClient {
     )
 
     if (!tenantId || !clientId || !clientSecret) {
-      throw new SharepointApiException('Thiếu cấu hình Sharepoint API')
+      throw new SharepointApiException('Missing SharePoint API configuration')
     }
 
     const url = `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/token`
@@ -79,39 +91,112 @@ export class SharepointClient {
     }
   }
 
+  /**
+   * Starts a subscription for the Office 365 Management Activity API.
+   *
+   * @param {string} token - The OAuth2 access token.
+   * @param {string} [contentType='Audit.SharePoint'] - The type of content to subscribe to.
+   * @returns {Promise<SharepointSubscriptionDto>} The subscription details.
+   */
   async startSubscription(
     token: string,
     contentType = 'Audit.SharePoint',
-  ): Promise<any> {
+  ): Promise<SharepointSubscriptionDto | null> {
     const tenantId = this.configService.get<string>('sharepoint.tenantId')
-    const url = `https://manage.office.com/api/v1.0/${tenantId}/activity/feed/subscriptions/start?contentType=${contentType}`
+    const url = `https://manage.office.com/api/v1.0/${tenantId}/activity/feed/subscriptions/start?contentType=${contentType}&PublisherIdentifier=${tenantId}`
     this.logger.debug(`Sending start subscription request to: ${url}`)
-    return this.httpClient.post<any>(url, null, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
+    try {
+      return await this.httpClient.post<SharepointSubscriptionDto>(url, null, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+    } catch (error: any) {
+      const msError = error.response?.data?.error
+
+      if (
+        msError &&
+        (msError.code === 'AF20011' || msError.code === 'AF20024')
+      ) {
+        this.logger.log(
+          `Subscription for ${contentType} is already active (Code: ${msError.code}). Skipping...`,
+        )
+        return null
+      }
+
+      this.logger.error(`Start subscription failed. Error: ${error.message}`)
+      this.logger.error(
+        `Start subscription response payload: ${JSON.stringify(error.response?.data || {})}`,
+      )
+      throw new SharepointApiException(
+        error.message,
+        error.response?.data || error,
+      )
+    }
   }
 
+  /**
+   * Lists available activity log content for a given subscription and content type.
+   *
+   * @param {string} token - The OAuth2 access token.
+   * @param {string} [contentType='Audit.SharePoint'] - The content type to query.
+   * @param {string} [startTime] - The start time for the query.
+   * @param {string} [endTime] - The end time for the query.
+   * @returns {Promise<SharepointContentDto[]>} An array of content metadata.
+   */
   async listAvailableContent(
     token: string,
     contentType = 'Audit.SharePoint',
     startTime?: string,
     endTime?: string,
-  ): Promise<any[]> {
+  ): Promise<SharepointContentDto[]> {
     const tenantId = this.configService.get<string>('sharepoint.tenantId')
-    let url = `https://manage.office.com/api/v1.0/${tenantId}/activity/feed/subscriptions/content?contentType=${contentType}`
+    let url = `https://manage.office.com/api/v1.0/${tenantId}/activity/feed/subscriptions/content?contentType=${contentType}&PublisherIdentifier=${tenantId}`
     if (startTime && endTime) {
       url += `&startTime=${startTime}&endTime=${endTime}`
     }
     this.logger.debug(`Sending list available content request to: ${url}`)
-    return this.httpClient.get<any[]>(url, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
+    try {
+      return await this.httpClient.get<SharepointContentDto[]>(url, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+    } catch (error: any) {
+      this.logger.error(
+        `List available content failed. Error: ${error.message}`,
+      )
+      this.logger.error(
+        `List available content response payload: ${JSON.stringify(error.response?.data || {})}`,
+      )
+      throw new SharepointApiException(
+        error.message,
+        error.response?.data || error,
+      )
+    }
   }
 
-  async fetchContent(token: string, contentUri: string): Promise<any[]> {
+  /**
+   * Fetches the actual activity log events from the provided content URI.
+   *
+   * @param {string} token - The OAuth2 access token.
+   * @param {string} contentUri - The URI of the content to fetch.
+   * @returns {Promise<SharepointActivityDto[]>} The array of activity events.
+   */
+  async fetchContent(
+    token: string,
+    contentUri: string,
+  ): Promise<SharepointActivityDto[]> {
     this.logger.debug(`Sending fetch content request to: ${contentUri}`)
-    return this.httpClient.get<any[]>(contentUri, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
+    try {
+      return await this.httpClient.get<SharepointActivityDto[]>(contentUri, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+    } catch (error: any) {
+      this.logger.error(`Fetch content failed. Error: ${error.message}`)
+      this.logger.error(
+        `Fetch content response payload: ${JSON.stringify(error.response?.data || {})}`,
+      )
+      throw new SharepointApiException(
+        error.message,
+        error.response?.data || error,
+      )
+    }
   }
 }

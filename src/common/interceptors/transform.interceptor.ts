@@ -17,6 +17,14 @@ export class TransformInterceptor<T> implements NestInterceptor<
 > {
   constructor(private reflector: Reflector) {}
 
+  /**
+   * Intercepts successful responses and formats them into a standard API response structure.
+   * It wraps the original data and includes HTTP status code and custom messages.
+   *
+   * @param {ExecutionContext} context - The execution context.
+   * @param {CallHandler} next - The call handler to continue the execution flow.
+   * @returns {Observable<ApiResponse<T>>} An observable that emits the formatted response.
+   */
   intercept(
     context: ExecutionContext,
     next: CallHandler,
