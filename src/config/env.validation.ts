@@ -1,19 +1,27 @@
 import { z } from 'zod'
 
-export const envSchema = z.object({
-  NODE_ENV: z
-    .enum(['development', 'production', 'test'])
-    .default('development'),
-  PORT: z.coerce.number().default(3000),
-  DB_HOST: z.string(),
-  DB_PORT: z.coerce.number(),
-  DB_USER: z.string(),
-  DB_PASS: z.string(),
-  DB_NAME: z.string(),
-  O365_TENANT_ID: z.string(),
-  O365_CLIENT_ID: z.string(),
-  O365_CLIENT_SECRET: z.string(),
-})
+export const envSchema = z
+  .object({
+    NODE_ENV: z
+      .enum(['development', 'production', 'test'])
+      .default('development'),
+    PORT: z.coerce.number().default(3000),
+    DB_HOST: z.string(),
+    DB_PORT: z.coerce.number(),
+    DB_USER: z.string(),
+    DB_PASS: z.string(),
+    DB_NAME: z.string(),
+    O365_TENANT_ID: z.string(),
+    O365_CLIENT_ID: z.string(),
+    O365_CLIENT_SECRET: z.string(),
+    TOKEN_ENCRYPTION_KEY: z
+      .string()
+      .min(16, 'Must be at least 16 characters')
+      .max(128, 'Max 128 characters'),
+  })
+  .refine((env) => Buffer.byteLength(env.TOKEN_ENCRYPTION_KEY, 'utf-8') >= 32, {
+    message: 'TOKEN_ENCRYPTION_KEY must encode to at least 32 bytes',
+  })
 
 export type EnvironmentVariables = z.infer<typeof envSchema>
 

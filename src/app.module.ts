@@ -6,6 +6,7 @@ import { HttpClientModule } from './common/http-client/http-client.module'
 import { SharepointModule } from './modules/sharepoint/sharepoint.module'
 import { LoggerModule } from './common/logger/logger.module'
 import { LoggerInterceptor } from './common/logger/logger.interceptor'
+import { EncryptionModule } from './modules/encryption/encryption.module'
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { LoggerInterceptor } from './common/logger/logger.interceptor'
     HttpClientModule,
     SharepointModule,
     LoggerModule,
+    EncryptionModule,
   ],
   controllers: [],
   providers: [
