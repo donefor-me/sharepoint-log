@@ -9,7 +9,7 @@ import {
   SharepointContentDto,
   SharepointActivityDto,
 } from './sharepoint-management.dto'
-import { SharepointApiException } from './sharepoint-api.exception'
+import { SharepointApiException } from 'src/common/exceptions'
 import { Logger } from 'src/common/logger/logger.service'
 
 import { SharepointTokenCacheRepository } from '../repositories/sharepoint-token-cache.repository'
@@ -84,10 +84,7 @@ export class SharepointClient {
       this.logger.error(
         `Failed authentication response payload: ${JSON.stringify(error.response?.data || {})}`,
       )
-      throw new SharepointApiException(
-        error.message,
-        error.response?.data || error,
-      )
+      throw new SharepointApiException(error.message)
     }
   }
 
@@ -126,10 +123,7 @@ export class SharepointClient {
       this.logger.error(
         `Start subscription response payload: ${JSON.stringify(error.response?.data || {})}`,
       )
-      throw new SharepointApiException(
-        error.message,
-        error.response?.data || error,
-      )
+      throw new SharepointApiException(error.message)
     }
   }
 
@@ -165,10 +159,7 @@ export class SharepointClient {
       this.logger.error(
         `List available content response payload: ${JSON.stringify(error.response?.data || {})}`,
       )
-      throw new SharepointApiException(
-        error.message,
-        error.response?.data || error,
-      )
+      throw new SharepointApiException(error.message)
     }
   }
 
@@ -193,10 +184,7 @@ export class SharepointClient {
       this.logger.error(
         `Fetch content response payload: ${JSON.stringify(error.response?.data || {})}`,
       )
-      throw new SharepointApiException(
-        error.message,
-        error.response?.data || error,
-      )
+      throw new SharepointApiException(error.message)
     }
   }
 }

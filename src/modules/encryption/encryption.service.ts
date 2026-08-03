@@ -2,7 +2,8 @@ import { Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import * as crypto from 'crypto'
 import { EnvironmentVariables } from '../../config/env.validation'
-import { EncryptionError } from './encryption.exception'
+import { Logger } from 'src/common/logger/logger.service'
+import { EncryptionException } from 'src/common/exceptions'
 
 @Injectable()
 export class EncryptionService {
@@ -15,14 +16,20 @@ export class EncryptionService {
   private readonly KEY_LENGTH = 32
   private readonly key: Buffer
 
-  constructor(private configService: ConfigService<EnvironmentVariables>) {
+  constructor(
+    private readonly configService: ConfigService<EnvironmentVariables>,
+    private readonly logger: Logger,
+  ) {
+    this.logger.setContext(EncryptionService.name)
     const secret = this.configService.getOrThrow<string>('TOKEN_ENCRYPTION_KEY')
     this.key = crypto.scryptSync(secret, this.KDF_SALT, this.KEY_LENGTH)
+    this.logger.log('Encryption key initialized')
   }
 
   encrypt(text: string): string {
-    if (!text) throw new EncryptionError('Text to encrypt cannot be empty')
+    if (!text) throw new EncryptionException('Text to encrypt cannot be empty')
 
+    this.logger.debug(`Encrypting text, length: ${text.length}`)
     const iv = crypto.randomBytes(this.IV_LENGTH)
     const cipher = crypto.createCipheriv(this.algorithm, this.key, iv)
 
@@ -33,19 +40,26 @@ export class EncryptionService {
     const authTag = cipher.getAuthTag()
 
     const combinedBuffer = Buffer.concat([iv, authTag, encryptedBuffer])
-    return combinedBuffer.toString('base64')
+    const result = combinedBuffer.toString('base64')
+
+    this.logger.debug(`Encrypted successfully, output length: ${result.length}`)
+    return result
   }
 
   decrypt(encryptedText: string): string {
     if (!encryptedText) {
-      throw new EncryptionError('Encrypted text cannot be empty')
+      throw new EncryptionException('Encrypted text cannot be empty')
     }
 
+    this.logger.debug(`Decrypting payload, length: ${encryptedText.length}`)
     try {
       const data = Buffer.from(encryptedText, 'base64')
 
       if (data.length < this.MINIMUM_PAYLOAD_LENGTH) {
-        throw new EncryptionError('Invalid encrypted format')
+        this.logger.warn(
+          `Decryption failed: payload too short (${data.length} bytes)`,
+        )
+        throw new EncryptionException('Invalid encrypted format')
       }
 
       const iv = data.subarray(0, this.IV_LENGTH)
@@ -60,10 +74,12 @@ export class EncryptionService {
         decipher.final(),
       ])
 
+      this.logger.debug('Decrypted successfully')
       return decryptedBuffer.toString('utf8')
     } catch (error) {
-      if (error instanceof EncryptionError) throw error
-      throw new EncryptionError('Decryption failed')
+      if (error instanceof EncryptionException) throw error
+      this.logger.error(`Decryption error: ${(error as Error).name}`)
+      throw new EncryptionException('Decryption failed')
     }
   }
 }

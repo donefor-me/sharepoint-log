@@ -7,6 +7,8 @@ import {
 } from '@nestjs/common'
 import { Response } from 'express'
 import { ApiResponse } from '../interfaces/api-response.interface'
+import { DomainException } from '../exceptions/domain.exception'
+import { InfrastructureException } from '../exceptions/infrastructure.exception'
 
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
@@ -21,28 +23,35 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const ctx = host.switchToHttp()
     const response = ctx.getResponse<Response>()
 
-    const status =
-      exception instanceof HttpException
-        ? exception.getStatus()
-        : HttpStatus.INTERNAL_SERVER_ERROR
+    let status = HttpStatus.INTERNAL_SERVER_ERROR
+    let message = 'Internal Server Error'
+    let error: string | undefined
 
-    const exceptionResponse =
-      exception instanceof HttpException
-        ? exception.getResponse()
-        : { message: 'Internal Server Error' }
-
-    const message =
-      typeof exceptionResponse === 'string'
-        ? exceptionResponse
-        : (exceptionResponse as any).message || 'Error'
+    if (exception instanceof HttpException) {
+      status = exception.getStatus()
+      const exceptionResponse = exception.getResponse()
+      message =
+        typeof exceptionResponse === 'string'
+          ? exceptionResponse
+          : (exceptionResponse as any).message || 'Error'
+      error =
+        typeof exceptionResponse === 'object'
+          ? (exceptionResponse as any).error
+          : undefined
+    } else if (exception instanceof InfrastructureException) {
+      status = exception.statusCode
+      message = exception.message
+      error = exception.name
+    } else if (exception instanceof DomainException) {
+      status = HttpStatus.UNPROCESSABLE_ENTITY
+      message = exception.message
+      error = exception.name
+    }
 
     const errorBody: ApiResponse<null> = {
       statusCode: status,
       message: Array.isArray(message) ? message[0] : message,
-      error:
-        typeof exceptionResponse === 'object'
-          ? (exceptionResponse as any).error
-          : 'Internal Server Error',
+      error,
       timestamp: new Date().toISOString(),
     }
 
