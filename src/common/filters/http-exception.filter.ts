@@ -9,19 +9,24 @@ import { Response } from 'express'
 import { ApiResponse } from '../interfaces/api-response.interface'
 import { DomainException } from '../exceptions/domain.exception'
 import { InfrastructureException } from '../exceptions/infrastructure.exception'
+import { Logger } from '../logger/logger.service'
 
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
-  /**
-   * Catches exceptions thrown across the application and formats the error response.
-   * Translates NestJS HttpExceptions and unhandled errors into a consistent JSON structure.
-   *
-   * @param {unknown} exception - The exception that was thrown.
-   * @param {ArgumentsHost} host - The arguments host containing the execution context.
-   */
+  constructor(private readonly logger: Logger) {
+    this.logger.setContext(HttpExceptionFilter.name)
+  }
+
   catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp()
     const response = ctx.getResponse<Response>()
+
+    // Log all exceptions with stack trace for observability
+    if (exception instanceof Error) {
+      this.logger.error(exception.message, exception.stack)
+    } else {
+      this.logger.error('Unknown exception caught', JSON.stringify(exception))
+    }
 
     let status = HttpStatus.INTERNAL_SERVER_ERROR
     let message = 'Internal Server Error'

@@ -19,6 +19,22 @@ export class HttpClientService {
   }
 
   /**
+   * Sends an HTTP GET request and returns the full response including headers.
+   *
+   * @param {string} url - The URL to send the request to.
+   * @param {AxiosRequestConfig} [config] - Optional Axios request configuration.
+   * @returns {Promise<any>} A promise that resolves to the full Axios response.
+   */
+  async getRaw<T = any>(
+    url: string,
+    config?: AxiosRequestConfig,
+  ): Promise<any> {
+    return firstValueFrom(
+      this.httpService.request<T>({ method: 'GET', url, ...config }),
+    )
+  }
+
+  /**
    * Sends an HTTP POST request.
    *
    * @param {string} url - The URL to send the request to.
