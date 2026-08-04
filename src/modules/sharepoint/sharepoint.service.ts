@@ -19,6 +19,15 @@ export class SharepointService {
   private readonly tenantId: string
   private readonly ALLOWED_API_PREFIX = 'https://manage.office.com/api/v1.0/'
 
+  /**
+   * Initializes the SharepointService, sets up logging context, and retrieves the tenantId from config.
+   *
+   * @param {HttpClientService} httpClient - The HTTP client used for external API requests.
+   * @param {ConfigService} configService - The application configuration service.
+   * @param {Logger} logger - The logger instance.
+   * @param {SharepointTokenCacheRepository} tokenCacheRepository - Repository to retrieve and store the authentication token.
+   * @returns {void}
+   */
   constructor(
     private readonly httpClient: HttpClientService,
     private readonly configService: ConfigService,
@@ -29,6 +38,13 @@ export class SharepointService {
     this.tenantId = this.configService.getOrThrow<string>('sharepoint.tenantId')
   }
 
+  /**
+   * Retrieves a valid access token for the SharePoint API. It first checks the cache.
+   * If a valid token is not found, it requests a new one using client credentials flow and caches it.
+   *
+   * @returns {Promise<string>} - A promise that resolves with the access token string.
+   * @throws {SharepointApiException} - Thrown if configuration is missing or authentication fails.
+   */
   private async getToken(): Promise<string> {
     const cachedToken = await this.tokenCacheRepository.getValidToken()
     if (cachedToken) return cachedToken
@@ -66,6 +82,14 @@ export class SharepointService {
     }
   }
 
+  /**
+   * Builds the fully qualified URL for Office 365 Management API calls.
+   * Automatically appends the PublisherIdentifier to the query parameters.
+   *
+   * @param {string} path - The specific API path to append to the base URL.
+   * @param {Record<string, string>} [queryParams={}] - Optional query parameters to include in the URL.
+   * @returns {string} - The constructed API URL.
+   */
   private buildApiUrl(
     path: string,
     queryParams: Record<string, string> = {},
@@ -78,6 +102,16 @@ export class SharepointService {
     return `${base}?${params.toString()}`
   }
 
+  /**
+   * Wrapper function to execute HTTP requests with automatic token injection.
+   * Retrieves a token, attaches it as a Bearer authorization header, and performs the request.
+   *
+   * @param {'get' | 'post'} method - The HTTP method to use.
+   * @param {string} url - The URL to send the request to.
+   * @param {unknown} [body] - The request payload body (used for POST requests).
+   * @returns {Promise<T>} - A promise that resolves with the strongly typed response data.
+   * @throws {SharepointApiException} - Thrown if the HTTP request fails.
+   */
   private async authenticatedRequest<T>(
     method: 'get' | 'post',
     url: string,
@@ -94,11 +128,23 @@ export class SharepointService {
     }
   }
 
+  /**
+   * Verifies the connection by attempting to retrieve a valid authentication token.
+   *
+   * @returns {Promise<{ status: string }>} - A promise that resolves to an object indicating connected status.
+   */
   async checkConnection(): Promise<{ status: string }> {
     await this.getToken()
     return { status: 'connected' }
   }
 
+  /**
+   * Starts a new subscription for SharePoint activity logs on the Office 365 Management API.
+   * If a subscription is already active, returns null without failing.
+   *
+   * @returns {Promise<SharepointSubscriptionDto | null>} - A promise resolving to the subscription info, or null if already active.
+   * @throws {SharepointApiException} - Thrown if starting the subscription fails for reasons other than already being active.
+   */
   async startActivitySubscription(): Promise<SharepointSubscriptionDto | null> {
     const token = await this.getToken()
     const contentType = SHAREPOINT_CONSTANTS.CONTENT_TYPE_AUDIT_SHAREPOINT
@@ -120,6 +166,12 @@ export class SharepointService {
     }
   }
 
+  /**
+   * Retrieves the list of available SharePoint activity content blobs (metadata) for a given time window.
+   *
+   * @param {TimeWindowDto} [timeWindow] - The optional time window to filter the activity list by.
+   * @returns {Promise<SharepointContentDto[]>} - A promise that resolves with an array of activity content metadata.
+   */
   async listActivityContent(
     timeWindow?: TimeWindowDto,
   ): Promise<SharepointContentDto[]> {
@@ -133,6 +185,14 @@ export class SharepointService {
     return this.authenticatedRequest<SharepointContentDto[]>('get', url)
   }
 
+  /**
+   * Fetches the detailed activity logs (content events) from a specific blob URI.
+   * Enforces security by checking if the URI starts with the allowed API prefix.
+   *
+   * @param {string} contentUri - The URI pointing to the specific activity blob.
+   * @returns {Promise<SharepointActivityDto[]>} - A promise that resolves with the detailed activity records.
+   * @throws {SharepointApiException} - Thrown if the provided URI is invalid or the fetch request fails.
+   */
   async fetchActivityContent(
     contentUri: string,
   ): Promise<SharepointActivityDto[]> {
@@ -144,6 +204,13 @@ export class SharepointService {
     return this.authenticatedRequest<SharepointActivityDto[]>('get', contentUri)
   }
 
+  /**
+   * Downloads raw data (like file content) from a URL using authenticated access.
+   *
+   * @param {string} url - The target URL to download from.
+   * @returns {Promise<any>} - A promise that resolves with the raw response data.
+   * @throws {SharepointApiException} - Thrown if the raw fetch request fails.
+   */
   async fetchRaw(url: string): Promise<any> {
     const token = await this.getToken()
     try {
@@ -155,9 +222,17 @@ export class SharepointService {
     }
   }
 
+  /**
+   * Helper function to construct the URL for listing activity content blobs.
+   * Merges content type and time window constraints.
+   *
+   * @param {TimeWindowDto} timeWindow - The window of time to constrain the list.
+   * @param {string} [contentType=SHAREPOINT_CONSTANTS.CONTENT_TYPE_AUDIT_SHAREPOINT] - The content type for the audit log.
+   * @returns {string} - The built API URL string for the list request.
+   */
   buildListUri(
     timeWindow: TimeWindowDto,
-    contentType = SHAREPOINT_CONSTANTS.CONTENT_TYPE_AUDIT_SHAREPOINT,
+    contentType: string = SHAREPOINT_CONSTANTS.CONTENT_TYPE_AUDIT_SHAREPOINT,
   ): string {
     return this.buildApiUrl('subscriptions/content', {
       contentType,
