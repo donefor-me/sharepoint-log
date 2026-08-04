@@ -1,12 +1,15 @@
 import { Module } from '@nestjs/common'
-import { APP_INTERCEPTOR } from '@nestjs/core'
-import { CoreConfigModule } from './config/config.module'
+import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core'
+import { CoreConfigModule } from '@config/config.module'
 import { DatabaseModule } from './database/database.module'
-import { HttpClientModule } from './common/http-client/http-client.module'
-import { SharepointModule } from './modules/sharepoint/sharepoint.module'
-import { LoggerModule } from './common/logger/logger.module'
-import { LoggerInterceptor } from './common/logger/logger.interceptor'
-import { EncryptionModule } from './modules/encryption/encryption.module'
+import { HttpClientModule } from '@common/http-client'
+import { SharepointModule } from '@modules/sharepoint/sharepoint.module'
+import { AuditLogSyncModule } from '@modules/audit-log-sync/audit-log-sync.module'
+import { LoggerModule, LoggerInterceptor } from '@common/logger'
+import { EncryptionModule } from '@modules/encryption/encryption.module'
+import { TasksModule } from './tasks/tasks.module'
+import { TransformInterceptor } from '@common/interceptors'
+import { HttpExceptionFilter } from '@common/filters'
 
 @Module({
   imports: [
@@ -14,14 +17,24 @@ import { EncryptionModule } from './modules/encryption/encryption.module'
     DatabaseModule,
     HttpClientModule,
     SharepointModule,
+    AuditLogSyncModule,
     LoggerModule,
     EncryptionModule,
+    TasksModule,
   ],
   controllers: [],
   providers: [
     {
       provide: APP_INTERCEPTOR,
       useClass: LoggerInterceptor,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: TransformInterceptor,
+    },
+    {
+      provide: APP_FILTER,
+      useClass: HttpExceptionFilter,
     },
   ],
 })
