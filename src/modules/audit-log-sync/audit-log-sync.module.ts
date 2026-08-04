@@ -24,6 +24,11 @@ import { AuditLogBlobRepository } from './repositories/audit-log-blob.repository
     AuditLogRepository,
     AuditLogBlobRepository,
   ],
-  exports: [AuditLogSyncService],
+  exports: [
+    TypeOrmModule,
+    AuditLogSyncService,
+    SyncLockService,
+    SharepointModule,
+  ],
 })
 export class AuditLogSyncModule {}

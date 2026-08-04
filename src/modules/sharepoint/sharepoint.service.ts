@@ -13,7 +13,7 @@ import { Logger } from '@common/logger'
 import { SHAREPOINT_CONSTANTS } from './constants/sharepoint.constant'
 import { SharepointTokenCacheRepository } from './repositories/sharepoint-token-cache.repository'
 import { TimeWindowDto } from '@common/dto/time-window.dto'
-
+import { withRetry } from '@utils/http-retry.util'
 @Injectable()
 export class SharepointService {
   private readonly tenantId: string
@@ -239,5 +239,32 @@ export class SharepointService {
       ...(timeWindow.startTime && { startTime: timeWindow.startTime }),
       ...(timeWindow.endTime && { endTime: timeWindow.endTime }),
     })
+  }
+
+  /**
+   * Fetches the activity logs stream using pagination, yielding batches to a callback.
+   *
+   * @param {TimeWindowDto} timeWindow - The time window for the query.
+   * @param {(files: SharepointContentDto[]) => Promise<void>} onBatch - Callback for each batch of files.
+   * @returns {Promise<void>}
+   */
+  async fetchLogsStream(
+    timeWindow: TimeWindowDto,
+    onBatch: (files: SharepointContentDto[]) => Promise<void>,
+  ): Promise<void> {
+    let nextPageUrl: string | undefined = this.buildListUri(timeWindow)
+
+    while (nextPageUrl) {
+      const { data: files, headers } = await withRetry(() =>
+        this.fetchRaw(nextPageUrl!),
+      )
+
+      const typedFiles = files as SharepointContentDto[]
+      if (typedFiles && typedFiles.length > 0) {
+        await onBatch(typedFiles)
+      }
+
+      nextPageUrl = headers['nextpageuri']
+    }
   }
 }
