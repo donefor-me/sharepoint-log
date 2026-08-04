@@ -1,6 +1,9 @@
 import { DataSource } from 'typeorm';
 import { config } from 'dotenv';
-import { SharepointLog } from './src/modules/sharepoint/entities/sharepoint-log.entity';
+import { AuditLog } from './src/modules/audit-log-sync/entities/audit-log.entity';
+import { AuditLogContentBlob } from './src/modules/audit-log-sync/entities/audit-log-content-blob.entity';
+import { AuditLogSyncState } from './src/modules/audit-log-sync/entities/audit-log-sync-state.entity';
+import { SharepointTokenCache } from './src/modules/sharepoint/entities/sharepoint-token-cache.entity';
 
 config();
 
@@ -11,7 +14,7 @@ export default new DataSource({
   username: process.env.DB_USER || 'postgres',
   password: process.env.DB_PASS || 'postgres',
   database: process.env.DB_NAME || 'sharepoint_logs',
-  entities: [SharepointLog],
+  entities: [AuditLog, SharepointTokenCache, AuditLogContentBlob, AuditLogSyncState],
   migrations: ['src/database/migrations/*.ts'],
   synchronize: false,
 });

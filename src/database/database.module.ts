@@ -1,7 +1,9 @@
 import { Module } from '@nestjs/common'
 import { TypeOrmModule } from '@nestjs/typeorm'
 import { ConfigService } from '@nestjs/config'
-import { SharepointLog } from '../modules/sharepoint/entities/sharepoint-log.entity'
+import { AuditLog } from '../modules/audit-log-sync/entities/audit-log.entity'
+import { AuditLogContentBlob } from '../modules/audit-log-sync/entities/audit-log-content-blob.entity'
+import { AuditLogSyncState } from '../modules/audit-log-sync/entities/audit-log-sync-state.entity'
 import { SharepointTokenCache } from '../modules/sharepoint/entities/sharepoint-token-cache.entity'
 
 @Module({
@@ -15,8 +17,13 @@ import { SharepointTokenCache } from '../modules/sharepoint/entities/sharepoint-
         username: configService.get<string>('DB_USER') || 'postgres',
         password: configService.get<string>('DB_PASS') || 'postgres',
         database: configService.get<string>('DB_NAME') || 'sharepoint_logs',
-        entities: [SharepointLog, SharepointTokenCache],
-        synchronize: true, // Strict for production
+        entities: [
+          AuditLog,
+          SharepointTokenCache,
+          AuditLogContentBlob,
+          AuditLogSyncState,
+        ],
+        synchronize: false,
       }),
     }),
   ],
