@@ -21,33 +21,30 @@ export class SharepointController {
    */
   constructor(private readonly sharepointService: SharepointService) {}
 
-  @Get('check')
-  @HttpCode(HttpStatus.OK)
-  @ResponseMessage('Connection checked successfully')
   /**
    * Endpoint to verify the connection status to the SharePoint API.
    *
    * @returns {Promise<{ status: string }>} - A promise that resolves with the connection status object.
    */
+  @Get('check')
+  @HttpCode(HttpStatus.OK)
+  @ResponseMessage('Connection checked successfully')
   async checkConnection() {
     return this.sharepointService.checkConnection()
   }
 
-  @Post('subscription/start')
-  @HttpCode(HttpStatus.OK)
-  @ResponseMessage('Subscription started successfully')
   /**
    * Endpoint to initiate a new activity subscription with SharePoint webhooks or event streams.
    *
    * @returns {Promise<SharepointSubscriptionDto | null>} - A promise that resolves with the subscription details or null if unsuccessful.
    */
+  @Post('subscription/start')
+  @HttpCode(HttpStatus.OK)
+  @ResponseMessage('Subscription started successfully')
   async startSubscription() {
     return this.sharepointService.startActivitySubscription()
   }
 
-  @Get('subscription/content')
-  @HttpCode(HttpStatus.OK)
-  @ResponseMessage('Content listed successfully')
   /**
    * Endpoint to list activity content from SharePoint, filtered by an optional time window.
    * Validates the query parameters against the TimeWindowSchema before processing.
@@ -56,10 +53,13 @@ export class SharepointController {
    * @returns {Promise<SharepointContentDto[]>} - A promise that resolves with an array of SharePoint content activities.
    * @throws {BadRequestException} - Thrown if the query parameters fail schema validation.
    */
+  @Get('subscription/content')
+  @HttpCode(HttpStatus.OK)
+  @ResponseMessage('Content listed successfully')
   async listContent(@Query() query: any) {
     const parsed = TimeWindowSchema.safeParse(query)
     if (!parsed.success) {
-      throw new BadRequestException(parsed.error.errors[0].message)
+      throw new BadRequestException(parsed.error.issues[0].message)
     }
     return this.sharepointService.listActivityContent(parsed.data)
   }
