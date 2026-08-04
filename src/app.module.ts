@@ -5,6 +5,7 @@ import { DatabaseModule } from './database/database.module'
 import { HttpClientModule } from '@common/http-client'
 import { SharepointModule } from '@modules/sharepoint/sharepoint.module'
 import { AuditLogSyncModule } from '@modules/audit-log-sync/audit-log-sync.module'
+import { SharepointDashboardModule } from '@modules/sharepoint-dashboard'
 import { LoggerModule, LoggerInterceptor } from '@common/logger'
 import { EncryptionModule } from '@modules/encryption/encryption.module'
 import { TasksModule } from './tasks/tasks.module'
@@ -18,6 +19,7 @@ import { HttpExceptionFilter } from '@common/filters'
     HttpClientModule,
     SharepointModule,
     AuditLogSyncModule,
+    SharepointDashboardModule,
     LoggerModule,
     EncryptionModule,
     TasksModule,
