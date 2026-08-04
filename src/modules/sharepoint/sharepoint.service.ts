@@ -12,6 +12,7 @@ import { SharepointApiException } from '@common/exceptions'
 import { Logger } from '@common/logger'
 import { SHAREPOINT_CONSTANTS } from './constants/sharepoint.constant'
 import { SharepointTokenCacheRepository } from './repositories/sharepoint-token-cache.repository'
+import { TimeWindowDto } from '@common/dto/time-window.dto'
 
 @Injectable()
 export class SharepointService {
@@ -120,14 +121,13 @@ export class SharepointService {
   }
 
   async listActivityContent(
-    startTime?: string,
-    endTime?: string,
+    timeWindow?: TimeWindowDto,
   ): Promise<SharepointContentDto[]> {
     const contentType = SHAREPOINT_CONSTANTS.CONTENT_TYPE_AUDIT_SHAREPOINT
     const queryParams: Record<string, string> = { contentType }
-    if (startTime && endTime) {
-      queryParams.startTime = startTime
-      queryParams.endTime = endTime
+    if (timeWindow?.startTime && timeWindow?.endTime) {
+      queryParams.startTime = timeWindow.startTime
+      queryParams.endTime = timeWindow.endTime
     }
     const url = this.buildApiUrl('subscriptions/content', queryParams)
     return this.authenticatedRequest<SharepointContentDto[]>('get', url)
@@ -156,14 +156,13 @@ export class SharepointService {
   }
 
   buildListUri(
-    startTime: string,
-    endTime: string,
+    timeWindow: TimeWindowDto,
     contentType = SHAREPOINT_CONSTANTS.CONTENT_TYPE_AUDIT_SHAREPOINT,
   ): string {
     return this.buildApiUrl('subscriptions/content', {
       contentType,
-      startTime,
-      endTime,
+      ...(timeWindow.startTime && { startTime: timeWindow.startTime }),
+      ...(timeWindow.endTime && { endTime: timeWindow.endTime }),
     })
   }
 }

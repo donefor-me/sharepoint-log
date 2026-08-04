@@ -12,18 +12,11 @@ import { AuditLogSyncState } from './entities/audit-log-sync-state.entity'
 import { SyncLockService } from './sync-lock.service'
 import { AuditLogRepository } from './repositories/audit-log.repository'
 import { AuditLogBlobRepository } from './repositories/audit-log-blob.repository'
-import { z } from 'zod'
 import { withRetry } from '@utils/http-retry.util'
 import { SYNC_CONFIG } from './constants/sync.constant'
 import { Logger } from '@common/logger'
 import type { Office365WorkloadType } from './constants/workload.constant'
-
-const syncWindowSchema = z
-  .object({
-    startTime: z.string().datetime(),
-    endTime: z.string().datetime(),
-  })
-  .refine((d) => new Date(d.startTime) < new Date(d.endTime))
+import { TimeWindowSchema, TimeWindowDto } from '@common/dto/time-window.dto'
 
 @Injectable()
 export class AuditLogSyncService {
@@ -97,12 +90,12 @@ export class AuditLogSyncService {
       )
       if (currentEnd > now) currentEnd = now
 
-      const validated = syncWindowSchema.parse({
+      const validated = TimeWindowSchema.parse({
         startTime: currentStart.toISOString(),
         endTime: currentEnd.toISOString(),
       })
 
-      await this.executeSyncWindow(validated.startTime, validated.endTime)
+      await this.executeSyncWindow(validated)
 
       let state = await this.syncStateRepo.findOne({
         where: { key: SYNC_CONFIG.STATE_WATERMARK_KEY },
@@ -119,14 +112,9 @@ export class AuditLogSyncService {
   }
 
   // Fix B2: Process each page immediately instead of accumulating all in memory
-  private async executeSyncWindow(
-    startTime: string,
-    endTime: string,
-  ): Promise<void> {
-    let nextPageUri: string | undefined = this.sharepointService.buildListUri(
-      startTime,
-      endTime,
-    )
+  private async executeSyncWindow(timeWindow: TimeWindowDto): Promise<void> {
+    let nextPageUri: string | undefined =
+      this.sharepointService.buildListUri(timeWindow)
 
     while (nextPageUri) {
       const { data, headers } = await withRetry(() =>

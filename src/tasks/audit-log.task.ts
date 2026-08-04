@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { Cron } from '@nestjs/schedule'
 import { AuditLogSyncService } from '@modules/audit-log-sync/audit-log-sync.service'
-import { SYNC_CONFIG } from '@modules/audit-log-sync/constants/sync.constant'
 import { Logger } from '@common/logger'
 
 @Injectable()

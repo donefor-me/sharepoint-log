@@ -5,9 +5,11 @@ import {
   HttpCode,
   HttpStatus,
   Query,
+  BadRequestException,
 } from '@nestjs/common'
 import { SharepointService } from './sharepoint.service'
 import { ResponseMessage } from '@common/decorators'
+import { TimeWindowSchema } from '@common/dto/time-window.dto'
 
 @Controller('api/sharepoint')
 export class SharepointController {
@@ -30,10 +32,11 @@ export class SharepointController {
   @Get('subscription/content')
   @HttpCode(HttpStatus.OK)
   @ResponseMessage('Content listed successfully')
-  async listContent(
-    @Query('startTime') startTime?: string,
-    @Query('endTime') endTime?: string,
-  ) {
-    return this.sharepointService.listActivityContent(startTime, endTime)
+  async listContent(@Query() query: any) {
+    const parsed = TimeWindowSchema.safeParse(query)
+    if (!parsed.success) {
+      throw new BadRequestException(parsed.error.errors[0].message)
+    }
+    return this.sharepointService.listActivityContent(parsed.data)
   }
 }
