@@ -54,7 +54,6 @@ export class HttpExceptionFilter implements ExceptionFilter {
     }
 
     const errorBody: ApiResponse<null> = {
-      statusCode: status,
       message: Array.isArray(message) ? message[0] : message,
       error,
       timestamp: new Date().toISOString(),

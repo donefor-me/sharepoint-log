@@ -18,6 +18,7 @@ export const envSchema = z
       .string()
       .min(16, 'Must be at least 16 characters')
       .max(128, 'Max 128 characters'),
+    JWT_SECRET: z.string().min(8),
   })
   .refine((env) => Buffer.byteLength(env.TOKEN_ENCRYPTION_KEY, 'utf-8') >= 32, {
     message: 'TOKEN_ENCRYPTION_KEY must encode to at least 32 bytes',

@@ -1,2 +1,6 @@
-export { SharepointModule } from './sharepoint.module'
-export { SharepointService } from './sharepoint.service'
+export * from './dto/sharepoint-auth-response.dto'
+export * from './dto/sharepoint-management.dto'
+export * from './dto/time-window.dto'
+export * from './entities/sharepoint-token-cache.entity'
+export * from './sharepoint.service'
+export * from './sharepoint.module'

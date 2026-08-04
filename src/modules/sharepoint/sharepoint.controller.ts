@@ -5,11 +5,10 @@ import {
   HttpCode,
   HttpStatus,
   Query,
-  BadRequestException,
 } from '@nestjs/common'
 import { SharepointService } from './sharepoint.service'
-import { ResponseMessage } from '@common/decorators'
-import { TimeWindowSchema } from '@common/dto/time-window.dto'
+import { ResponseMessage } from '@common'
+import { TimeWindowDto } from './dto/time-window.dto'
 
 @Controller('api/sharepoint')
 export class SharepointController {
@@ -56,11 +55,7 @@ export class SharepointController {
   @Get('subscription/content')
   @HttpCode(HttpStatus.OK)
   @ResponseMessage('Content listed successfully')
-  async listContent(@Query() query: any) {
-    const parsed = TimeWindowSchema.safeParse(query)
-    if (!parsed.success) {
-      throw new BadRequestException(parsed.error.issues[0].message)
-    }
-    return this.sharepointService.listActivityContent(parsed.data)
+  async listContent(@Query() query: TimeWindowDto) {
+    return this.sharepointService.listActivityContent(query)
   }
 }

@@ -4,7 +4,7 @@ import { ConfigModule } from '@nestjs/config'
 import { SharepointService } from './sharepoint.service'
 import { SharepointController } from './sharepoint.controller'
 import { SharepointTokenCache } from './entities/sharepoint-token-cache.entity'
-import sharepointConfig from './dto/sharepoint.config'
+import sharepointConfig from '../../config/sharepoint.config'
 import { SharepointTokenCacheRepository } from './repositories/sharepoint-token-cache.repository'
 import { EncryptionModule } from '../encryption/encryption.module'
 

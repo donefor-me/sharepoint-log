@@ -7,7 +7,6 @@ export interface MetaData {
 }
 
 export interface ApiResponse<T> {
-  statusCode: number
   message: string
   data?: T
   meta?: MetaData

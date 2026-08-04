@@ -1,12 +1,14 @@
 import { Injectable } from '@nestjs/common'
 import { Cron } from '@nestjs/schedule'
-import { Logger } from '@common/logger'
+import { Logger } from '@common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
-import { AuditLogSyncState } from '@modules/audit-log-sync/entities/audit-log-sync-state.entity'
-import { SyncLockService } from '@modules/audit-log-sync/sync-lock.service'
-import { SharepointService } from '@modules/sharepoint/sharepoint.service'
-import { AuditLogSyncService } from '@modules/audit-log-sync/audit-log-sync.service'
+import {
+  AuditLogSyncState,
+  SyncLockService,
+  AuditLogSyncService,
+} from '@modules/audit-log-sync'
+import { SharepointService } from '@modules/sharepoint'
 import { SYNC_CONFIG } from '@modules/audit-log-sync/constants/sync.constant'
 
 @Injectable()

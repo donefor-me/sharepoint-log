@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { createZodDto } from 'nestjs-zod'
 
 export const GetAuditLogsSchema = z.object({
   operation: z.string().optional(),
@@ -10,4 +11,4 @@ export const GetAuditLogsSchema = z.object({
   limit: z.coerce.number().min(1).default(10),
 })
 
-export type GetAuditLogsDto = z.infer<typeof GetAuditLogsSchema>
+export class GetAuditLogsDto extends createZodDto(GetAuditLogsSchema) {}

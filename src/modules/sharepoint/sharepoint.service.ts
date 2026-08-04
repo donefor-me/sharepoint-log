@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-import { HttpClientService } from '@common/http-client'
+import { HttpClientService } from '@common'
 import * as qs from 'qs'
 import { SharepointAuthResponseDto } from './dto/sharepoint-auth-response.dto'
 import {
@@ -8,11 +8,11 @@ import {
   SharepointContentDto,
   SharepointActivityDto,
 } from './dto/sharepoint-management.dto'
-import { SharepointApiException } from '@common/exceptions'
-import { Logger } from '@common/logger'
+import { SharepointApiException } from '@common'
+import { Logger } from '@common'
 import { SHAREPOINT_CONSTANTS } from './constants/sharepoint.constant'
 import { SharepointTokenCacheRepository } from './repositories/sharepoint-token-cache.repository'
-import { TimeWindowDto } from '@common/dto/time-window.dto'
+import { TimeWindowDto } from './dto/time-window.dto'
 import { withRetry } from '@utils/http-retry.util'
 @Injectable()
 export class SharepointService {

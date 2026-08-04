@@ -37,8 +37,6 @@ export class TransformInterceptor<T> implements NestInterceptor<
 
     return next.handle().pipe(
       map((res) => {
-        const statusCode = context.switchToHttp().getResponse().statusCode
-
         // Check if the response already has a meta field (e.g., from a paginated service)
         if (
           res &&
@@ -46,7 +44,6 @@ export class TransformInterceptor<T> implements NestInterceptor<
           ('data' in res || 'meta' in res)
         ) {
           return {
-            statusCode,
             message,
             data: res.data !== undefined ? res.data : null,
             ...(res.meta && { meta: res.meta as MetaData }),
@@ -55,7 +52,6 @@ export class TransformInterceptor<T> implements NestInterceptor<
 
         // Standard wrapping for raw data
         return {
-          statusCode,
           message,
           data: res,
         }

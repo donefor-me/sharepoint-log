@@ -1,14 +1,13 @@
 import { Injectable } from '@nestjs/common'
 import { DataSource } from 'typeorm'
-import { SharepointService } from '@modules/sharepoint/sharepoint.service'
+import { SharepointService, SharepointContentDto } from '@modules/sharepoint'
 import { AuditLog } from './entities/audit-log.entity'
-import { SharepointContentDto } from '@modules/sharepoint/dto/sharepoint-management.dto'
 import { chunkArray } from '../../utils/array.util'
 
-import { Logger } from '@common/logger'
+import { Logger } from '@common'
 import { Office365WorkloadType } from './constants/workload.constant'
 import { withRetry } from '@utils/http-retry.util'
-import { InfrastructureException } from '@common/exceptions'
+import { InfrastructureException } from '@common'
 
 @Injectable()
 export class AuditLogSyncService {

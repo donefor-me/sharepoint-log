@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { createZodDto } from 'nestjs-zod'
 
 export const TimeWindowSchema = z
   .object({
@@ -13,18 +14,15 @@ export const TimeWindowSchema = z
   })
   .refine(
     (data) => {
-      // Nếu có 1 trong 2 mà thiếu cái còn lại -> Lỗi
       if (
         (data.startTime && !data.endTime) ||
         (!data.startTime && data.endTime)
       ) {
         return false
       }
-      // Nếu có cả 2 -> Validate logic thời gian
       if (data.startTime && data.endTime) {
         return new Date(data.startTime) < new Date(data.endTime)
       }
-      // Bỏ trống cả 2 -> Hợp lệ
       return true
     },
     {
@@ -33,4 +31,4 @@ export const TimeWindowSchema = z
     },
   )
 
-export type TimeWindowDto = z.infer<typeof TimeWindowSchema>
+export class TimeWindowDto extends createZodDto(TimeWindowSchema) {}

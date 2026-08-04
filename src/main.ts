@@ -1,6 +1,6 @@
 import { NestFactory } from '@nestjs/core'
 import { AppModule } from './app.module'
-import { Logger } from '@common/logger'
+import { Logger } from '@common'
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -12,7 +12,11 @@ async function bootstrap() {
   logger.setContext('Bootstrap')
 
   app.enableCors({
-    origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+    origin: process.env.CORS_ORIGIN || [
+      'http://localhost:3000',
+      'http://localhost:3001',
+      'http://localhost:5173',
+    ],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
   })

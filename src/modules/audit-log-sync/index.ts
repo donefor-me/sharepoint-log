@@ -1,3 +1,5 @@
-export { AuditLogSyncModule } from './audit-log-sync.module'
-export { AuditLogSyncService } from './audit-log-sync.service'
-export { SyncLockService } from './sync-lock.service'
+export * from './audit-log-sync.module'
+export * from './audit-log-sync.service'
+export * from './sync-lock.service'
+export * from './entities/audit-log.entity'
+export * from './entities/audit-log-sync-state.entity'
