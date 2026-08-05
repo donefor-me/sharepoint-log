@@ -16,10 +16,10 @@ export class AuditLogSyncState {
   @PrimaryColumn()
   key: string
 
-  @Column({ type: 'timestamp', nullable: true })
-  value: Date
+  @Column({ type: 'datetime', nullable: true })
+  value: Date | null
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: 'datetime', nullable: true })
   lockedUntil: Date | null
 
   @UpdateDateColumn()

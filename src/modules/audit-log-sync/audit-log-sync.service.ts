@@ -1,77 +1,171 @@
 import { Injectable } from '@nestjs/common'
-import { DataSource } from 'typeorm'
-import { SharepointService, SharepointContentDto } from '@modules/sharepoint'
+import { DataSource, Repository } from 'typeorm'
+import { InjectRepository } from '@nestjs/typeorm'
+import { SharepointService } from '../sharepoint/sharepoint.service'
+import { SharepointContentDto } from '../sharepoint/dto/sharepoint-management.dto'
 import { AuditLog } from './entities/audit-log.entity'
+import { AuditLogDlq } from './entities/audit-log-dlq.entity'
 import { chunkArray } from '../../utils/array.util'
-
 import { Logger } from '@common'
 import { Office365WorkloadType } from './constants/workload.constant'
+import { AuditLogDlqStatus } from './constants/dlq-status.constant'
+import { SYNC_CONFIG } from './constants/sync.constant'
 import { withRetry } from '@utils/http-retry.util'
-import { InfrastructureException } from '@common'
 
 @Injectable()
 export class AuditLogSyncService {
+  /**
+   * Initializes the AuditLogSyncService and sets up the logger context.
+   *
+   * @param {SharepointService} sharepointService - The SharePoint service to fetch logs.
+   * @param {DataSource} dataSource - The TypeORM data source for managing transactions.
+   * @param {Repository<AuditLogDlq>} dlqRepo - The repository for the dead letter queue (pending/DLQ logs).
+   * @param {Logger} logger - The logger instance.
+   * @returns {void}
+   */
   constructor(
     private readonly sharepointService: SharepointService,
     private readonly dataSource: DataSource,
+    @InjectRepository(AuditLogDlq)
+    private readonly dlqRepo: Repository<AuditLogDlq>,
     private readonly logger: Logger,
   ) {
     this.logger.setContext(AuditLogSyncService.name)
   }
 
   /**
-   * Processes a list of SharePoint content files in parallel batches.
-   * Downloads blobs directly in memory and relies on Database UPSERT for idempotency.
+   * Accepts a batch of files and inserts them into the DLQ as PENDING (ignoring duplicates).
+   * Does NOT trigger processing automatically.
    *
-   * @param {SharepointContentDto[]} files - The array of file metadata retrieved from SharePoint.
-   * @param {number} concurrencyLimit - The maximum number of files to download concurrently in a single batch.
-   * @returns {Promise<void>} A promise that resolves when all batches are processed successfully.
-   * @throws {Error} If any file within a batch fails to download after retries, halting the sync process.
+   * @param {SharepointContentDto[]} files - The files to process.
+   * @returns {Promise<void>}
    */
-  async processInBatches(
-    files: SharepointContentDto[],
-    concurrencyLimit: number,
-  ): Promise<void> {
-    if (!files.length) return
+  async insertToDlq(files: SharepointContentDto[]): Promise<void> {
+    if (files.length > 0) {
+      const entities = files.map((file) => {
+        const entity = new AuditLogDlq()
+        entity.contentUri = file.contentUri
+        entity.contentId = file.contentId
+        entity.status = AuditLogDlqStatus.PENDING
+        return entity
+      })
 
-    for (const batch of chunkArray(files, concurrencyLimit)) {
-      const results = await Promise.allSettled(
-        batch.map((file) => withRetry(() => this.processSingleFile(file))),
-      )
-
-      const failedCount = results.filter((r) => r.status === 'rejected').length
-
-      if (failedCount > 0) {
-        this.logger.error(`Failed to download ${failedCount} blobs in batch`)
-        throw new InfrastructureException(
-          `Batch processing failed for ${failedCount} files, halting sync to prevent data loss.`,
-        )
-      }
+      await this.dlqRepo
+        .createQueryBuilder()
+        .insert()
+        .into(AuditLogDlq)
+        .values(entities)
+        .orIgnore()
+        .execute()
     }
   }
 
   /**
-   * Downloads and processes a single SharePoint audit log blob file.
-   * Performs data chunking and executes a bulk UPSERT within a single database transaction.
+   * Processes all pending logs stored in the dead letter queue table.
+   * Fetches detailed activity content from SharePoint and saves it to the database.
+   * Handles retry logic and moves failed logs to the DLQ state upon hitting the max retry limit.
    *
-   * @param {SharepointContentDto} file - The file metadata representing the blob to download.
-   * @returns {Promise<void>} A promise that resolves when the blob is successfully downloaded and inserted into the database.
+   * @returns {Promise<{ failed: number }>} - A promise resolving to the number of failed logs.
    */
-  private async processSingleFile(file: SharepointContentDto): Promise<void> {
-    const rawLogs = await this.sharepointService.fetchActivityContent(
-      file.contentUri,
-    )
+  async processPendingLogs(): Promise<{ failed: number }> {
+    let totalFailed = 0
+    let hasMore = true
+    let skipRecords = 0 // Track records to skip to avoid infinite loops
+
+    const CONCURRENCY_LIMIT = SYNC_CONFIG.CONCURRENT_DOWNLOADS
+    const MAX_RETRIES = SYNC_CONFIG.MAX_RETRY_PER_ID
+
+    while (hasMore) {
+      // Fix OOM & Infinite Loop: Bounded query using dynamic skip
+      const pendingLogs = await this.dlqRepo.find({
+        where: { status: AuditLogDlqStatus.PENDING },
+        order: { createdAt: 'ASC' }, // Stable sort is required for skip to work
+        take: 1000,
+        skip: skipRecords,
+      })
+
+      if (pendingLogs.length === 0) {
+        hasMore = false
+        break
+      }
+
+      this.logger.log(
+        `Processing batch of ${pendingLogs.length} pending logs...`,
+      )
+
+      for (const batch of chunkArray(pendingLogs, CONCURRENCY_LIMIT)) {
+        const doneLogUris: string[] = []
+        const failedLogs: AuditLogDlq[] = []
+
+        await Promise.allSettled(
+          batch.map(async (log) => {
+            try {
+              await withRetry(() =>
+                this.processSingleFile(log.contentUri, log.contentId),
+              )
+              doneLogUris.push(log.contentUri)
+            } catch (error: any) {
+              log.retryCount += 1
+              log.errorReason = error.message
+              if (log.retryCount >= MAX_RETRIES) {
+                log.status = AuditLogDlqStatus.DLQ
+              }
+              failedLogs.push(log)
+            }
+          }),
+        )
+
+        // Fix N+1: Bulk update successful logs
+        if (doneLogUris.length > 0) {
+          await this.dlqRepo.update(doneLogUris, {
+            status: AuditLogDlqStatus.DONE,
+          })
+        }
+
+        // Save failed logs individually (acceptable since failures are rare)
+        if (failedLogs.length > 0) {
+          await this.dlqRepo.save(failedLogs)
+          totalFailed += failedLogs.length
+
+          // CRITICAL: Increment `skipRecords` by the number of logs that
+          // failed but REMAIN in PENDING status. This ensures the next query
+          // skips over them instead of fetching them again in an infinite loop.
+          skipRecords += failedLogs.filter(
+            (log) => log.status === AuditLogDlqStatus.PENDING,
+          ).length
+        }
+      }
+    }
+
+    return { failed: totalFailed }
+  }
+
+  /**
+   * Fetches raw logs from the SharePoint API for a specific content URI and saves them in batches.
+   * Uses a database transaction to ensure atomicity and `orIgnore()` to prevent duplicate entries.
+   *
+   * @param {string} contentUri - The URI of the content blob to fetch.
+   * @param {string} contentId - The unique identifier for the content blob.
+   * @returns {Promise<void>} - A promise that resolves when the file is processed.
+   * @throws {Error} - Thrown if fetching or saving the data fails.
+   */
+  private async processSingleFile(
+    contentUri: string,
+    contentId: string,
+  ): Promise<void> {
+    const rawLogs =
+      await this.sharepointService.fetchActivityContent(contentUri)
 
     if (!rawLogs || rawLogs.length === 0) {
       return
     }
 
     await this.dataSource.transaction(async (tx) => {
-      for (const chunk of chunkArray(rawLogs, 2000)) {
+      for (const chunk of chunkArray(rawLogs, 1000)) {
         const entities = chunk
           .map((log: any) => ({
             id: String(log.Id),
-            contentId: file.contentId,
+            contentId: contentId,
             creationTime: log.CreationTime,
             operation: log.Operation,
             workload: log.Workload as Office365WorkloadType,

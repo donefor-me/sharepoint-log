@@ -242,17 +242,16 @@ export class SharepointService {
   }
 
   /**
-   * Fetches the activity logs stream using pagination, yielding batches to a callback.
+   * Fetches all activity logs using pagination and returns them as a flat array.
    *
    * @param {TimeWindowDto} timeWindow - The time window for the query.
-   * @param {(files: SharepointContentDto[]) => Promise<void>} onBatch - Callback for each batch of files.
-   * @returns {Promise<void>}
+   * @returns {Promise<SharepointContentDto[]>}
    */
-  async fetchLogsStream(
+  async fetchAllLogs(
     timeWindow: TimeWindowDto,
-    onBatch: (files: SharepointContentDto[]) => Promise<void>,
-  ): Promise<void> {
+  ): Promise<SharepointContentDto[]> {
     let nextPageUrl: string | undefined = this.buildListUri(timeWindow)
+    const allFiles: SharepointContentDto[] = []
 
     while (nextPageUrl) {
       const { data: files, headers } = await withRetry(() =>
@@ -261,10 +260,12 @@ export class SharepointService {
 
       const typedFiles = files as SharepointContentDto[]
       if (typedFiles && typedFiles.length > 0) {
-        await onBatch(typedFiles)
+        allFiles.push(...typedFiles)
       }
 
       nextPageUrl = headers['nextpageuri']
     }
+
+    return allFiles
   }
 }

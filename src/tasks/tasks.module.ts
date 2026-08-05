@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common'
 import { ScheduleModule } from '@nestjs/schedule'
 import { AuditLogSyncModule } from '../modules/audit-log-sync/audit-log-sync.module'
-import { AuditLogTask } from './audit-log.task'
+import { AuditLogSyncTask } from './audit-log-sync.task'
 
 @Module({
   imports: [ScheduleModule.forRoot(), AuditLogSyncModule],
-  providers: [AuditLogTask],
+  providers: [AuditLogSyncTask],
 })
 export class TasksModule {}
