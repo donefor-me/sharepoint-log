@@ -25,6 +25,12 @@ export class AuditLog {
   @Column({ nullable: true })
   userId: string
 
+  @Column({ nullable: true })
+  objectId: string
+
+  @Column({ nullable: true })
+  itemName: string
+
   @Column('jsonb', { nullable: true })
   rawData: Record<string, unknown>
 

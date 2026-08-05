@@ -76,6 +76,8 @@ export class AuditLogSyncService {
             operation: log.Operation,
             workload: log.Workload as Office365WorkloadType,
             userId: log.UserId,
+            objectId: log.ObjectId,
+            itemName: log.ItemName,
             rawData: log,
           }))
           .sort((a, b) => a.id.localeCompare(b.id))

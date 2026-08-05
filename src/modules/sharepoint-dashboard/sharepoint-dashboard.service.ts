@@ -18,6 +18,8 @@ export class SharepointDashboardService {
     const {
       operation,
       userId,
+      userName,
+      fileName,
       workload,
       startDate,
       endDate,
@@ -37,6 +39,19 @@ export class SharepointDashboardService {
 
     if (workload) {
       query.andWhere('log.workload = :workload', { workload })
+    }
+
+    if (userName) {
+      query.andWhere('log.userId ILIKE :userName', {
+        userName: `%${userName}%`,
+      })
+    }
+
+    if (fileName) {
+      query.andWhere(
+        '(log.objectId ILIKE :fileName OR log.itemName ILIKE :fileName)',
+        { fileName: `%${fileName}%` },
+      )
     }
 
     if (startDate) {
