@@ -1,8 +1,9 @@
+import { Logger } from '@common'
 import { Injectable, OnModuleInit } from '@nestjs/common'
 import { DataSource } from 'typeorm'
-import { AuditLogSyncState } from './entities/audit-log-sync-state.entity'
+
 import { SYNC_CONFIG } from './constants/sync.constant'
-import { Logger } from '@common'
+import { AuditLogSyncState } from './entities/audit-log-sync-state.entity'
 
 @Injectable()
 export class SyncLockService implements OnModuleInit {

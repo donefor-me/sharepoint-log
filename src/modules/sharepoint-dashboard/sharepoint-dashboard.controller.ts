@@ -1,6 +1,7 @@
 import { Controller, Get, Query } from '@nestjs/common'
-import { SharepointDashboardService } from './sharepoint-dashboard.service'
+
 import { GetAuditLogsDto } from './dto/get-audit-logs.dto'
+import { SharepointDashboardService } from './sharepoint-dashboard.service'
 
 @Controller('api/dashboard')
 export class SharepointDashboardController {

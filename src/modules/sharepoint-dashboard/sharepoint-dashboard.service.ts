@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
+
 import { AuditLog } from '../audit-log-sync/entities/audit-log.entity'
 import { AuditLogSyncState } from '../audit-log-sync/entities/audit-log-sync-state.entity'
 import { GetAuditLogsDto } from './dto/get-audit-logs.dto'

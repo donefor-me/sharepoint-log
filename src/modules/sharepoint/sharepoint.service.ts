@@ -1,19 +1,20 @@
-import { Injectable } from '@nestjs/common'
-import { ConfigService } from '@nestjs/config'
 import { HttpClientService } from '@common'
-import * as qs from 'qs'
-import { SharepointAuthResponseDto } from './dto/sharepoint-auth-response.dto'
-import {
-  SharepointSubscriptionDto,
-  SharepointContentDto,
-  SharepointActivityDto,
-} from './dto/sharepoint-management.dto'
 import { SharepointApiException } from '@common'
 import { Logger } from '@common'
-import { SHAREPOINT_CONSTANTS } from './constants/sharepoint.constant'
-import { SharepointTokenCacheRepository } from './repositories/sharepoint-token-cache.repository'
-import { TimeWindowDto } from './dto/time-window.dto'
+import { Injectable } from '@nestjs/common'
+import { ConfigService } from '@nestjs/config'
 import { withRetry } from '@utils/http-retry.util'
+import * as qs from 'qs'
+
+import { SHAREPOINT_CONSTANTS } from './constants/sharepoint.constant'
+import { SharepointAuthResponseDto } from './dto/sharepoint-auth-response.dto'
+import {
+  SharepointActivityDto,
+  SharepointContentDto,
+  SharepointSubscriptionDto,
+} from './dto/sharepoint-management.dto'
+import { TimeWindowDto } from './dto/time-window.dto'
+import { SharepointTokenCacheRepository } from './repositories/sharepoint-token-cache.repository'
 @Injectable()
 export class SharepointService {
   private readonly tenantId: string

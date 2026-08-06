@@ -1,14 +1,15 @@
+import { ResponseMessage } from '@common'
 import {
   Controller,
   Get,
-  Post,
   HttpCode,
   HttpStatus,
+  Post,
   Query,
 } from '@nestjs/common'
-import { SharepointService } from './sharepoint.service'
-import { ResponseMessage } from '@common'
+
 import { TimeWindowDto } from './dto/time-window.dto'
+import { SharepointService } from './sharepoint.service'
 
 @Controller('api/sharepoint')
 export class SharepointController {

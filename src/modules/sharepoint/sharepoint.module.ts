@@ -1,12 +1,13 @@
 import { Module } from '@nestjs/common'
-import { TypeOrmModule } from '@nestjs/typeorm'
 import { ConfigModule } from '@nestjs/config'
-import { SharepointService } from './sharepoint.service'
-import { SharepointController } from './sharepoint.controller'
-import { SharepointTokenCache } from './entities/sharepoint-token-cache.entity'
+import { TypeOrmModule } from '@nestjs/typeorm'
+
 import sharepointConfig from '../../config/sharepoint.config'
-import { SharepointTokenCacheRepository } from './repositories/sharepoint-token-cache.repository'
 import { EncryptionModule } from '../encryption/encryption.module'
+import { SharepointTokenCache } from './entities/sharepoint-token-cache.entity'
+import { SharepointTokenCacheRepository } from './repositories/sharepoint-token-cache.repository'
+import { SharepointController } from './sharepoint.controller'
+import { SharepointService } from './sharepoint.service'
 
 @Module({
   imports: [

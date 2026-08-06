@@ -1,9 +1,10 @@
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
-import { SharepointTokenCache } from '../entities/sharepoint-token-cache.entity'
-import { SharepointAuthResponseDto } from '../dto/sharepoint-auth-response.dto'
+
 import { EncryptionService } from '../../encryption/encryption.service'
+import { SharepointAuthResponseDto } from '../dto/sharepoint-auth-response.dto'
+import { SharepointTokenCache } from '../entities/sharepoint-token-cache.entity'
 
 const DEFAULT_CACHE_ID = 'DEFAULT'
 const TOKEN_EXPIRY_BUFFER_MS = 5 * 60 * 1000

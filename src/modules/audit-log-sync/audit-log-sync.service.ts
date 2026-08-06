@@ -1,16 +1,17 @@
-import { Injectable } from '@nestjs/common'
-import { DataSource, Repository } from 'typeorm'
-import { InjectRepository } from '@nestjs/typeorm'
-import { SharepointService } from '../sharepoint/sharepoint.service'
-import { SharepointContentDto } from '../sharepoint/dto/sharepoint-management.dto'
-import { AuditLog } from './entities/audit-log.entity'
-import { AuditLogDlq } from './entities/audit-log-dlq.entity'
-import { chunkArray } from '../../utils/array.util'
 import { Logger } from '@common'
-import { Office365WorkloadType } from './constants/workload.constant'
+import { Injectable } from '@nestjs/common'
+import { InjectRepository } from '@nestjs/typeorm'
+import { withRetry } from '@utils/http-retry.util'
+import { DataSource, Repository } from 'typeorm'
+
+import { chunkArray } from '../../utils/array.util'
+import { SharepointContentDto } from '../sharepoint/dto/sharepoint-management.dto'
+import { SharepointService } from '../sharepoint/sharepoint.service'
 import { AuditLogDlqStatus } from './constants/dlq-status.constant'
 import { SYNC_CONFIG } from './constants/sync.constant'
-import { withRetry } from '@utils/http-retry.util'
+import { Office365WorkloadType } from './constants/workload.constant'
+import { AuditLog } from './entities/audit-log.entity'
+import { AuditLogDlq } from './entities/audit-log-dlq.entity'
 
 @Injectable()
 export class AuditLogSyncService {
@@ -70,16 +71,12 @@ export class AuditLogSyncService {
   async processPendingLogs(): Promise<{ failed: number }> {
     let totalFailed = 0
     let hasMore = true
-    let skipRecords = 0 // Track records to skip to avoid infinite loops
-
-    const CONCURRENCY_LIMIT = SYNC_CONFIG.CONCURRENT_DOWNLOADS
-    const MAX_RETRIES = SYNC_CONFIG.MAX_RETRY_PER_ID
+    let skipRecords = 0
 
     while (hasMore) {
-      // Fix OOM & Infinite Loop: Bounded query using dynamic skip
       const pendingLogs = await this.dlqRepo.find({
         where: { status: AuditLogDlqStatus.PENDING },
-        order: { createdAt: 'ASC' }, // Stable sort is required for skip to work
+        order: { createdAt: 'ASC' },
         take: 1000,
         skip: skipRecords,
       })
@@ -93,7 +90,10 @@ export class AuditLogSyncService {
         `Processing batch of ${pendingLogs.length} pending logs...`,
       )
 
-      for (const batch of chunkArray(pendingLogs, CONCURRENCY_LIMIT)) {
+      for (const batch of chunkArray(
+        pendingLogs,
+        SYNC_CONFIG.CONCURRENT_DOWNLOADS,
+      )) {
         const doneLogUris: string[] = []
         const failedLogs: AuditLogDlq[] = []
 
@@ -107,7 +107,7 @@ export class AuditLogSyncService {
             } catch (error: any) {
               log.retryCount += 1
               log.errorReason = error.message
-              if (log.retryCount >= MAX_RETRIES) {
+              if (log.retryCount >= SYNC_CONFIG.MAX_RETRY_PER_ID) {
                 log.status = AuditLogDlqStatus.DLQ
               }
               failedLogs.push(log)
@@ -115,21 +115,15 @@ export class AuditLogSyncService {
           }),
         )
 
-        // Fix N+1: Bulk update successful logs
         if (doneLogUris.length > 0) {
           await this.dlqRepo.update(doneLogUris, {
             status: AuditLogDlqStatus.DONE,
           })
         }
 
-        // Save failed logs individually (acceptable since failures are rare)
         if (failedLogs.length > 0) {
           await this.dlqRepo.save(failedLogs)
           totalFailed += failedLogs.length
-
-          // CRITICAL: Increment `skipRecords` by the number of logs that
-          // failed but REMAIN in PENDING status. This ensures the next query
-          // skips over them instead of fetching them again in an infinite loop.
           skipRecords += failedLogs.filter(
             (log) => log.status === AuditLogDlqStatus.PENDING,
           ).length

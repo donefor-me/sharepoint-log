@@ -1,15 +1,15 @@
 export const SYNC_CONFIG = {
   // Phase 1 — Initial backfill
-  INITIAL_BACKFILL_DAYS: 7, // mốc xa nhất khi DB trắng
-  CATCHUP_STEP_DAYS: 1, // cuốn chiếu từng ngày một (đúng theo yêu cầu task)
+  INITIAL_BACKFILL_DAYS: 7, // Max past days to sync for an empty DB
+  CATCHUP_STEP_DAYS: 1, // Step size to process historical data day-by-day
 
   // Phase 2 — Ongoing
-  ZERO_LAG_MINUTES: 30, // safeNow = now - 30 phút, tránh miss log trễ vài phút từ Microsoft
-  FORWARD_CRON_EXPRESSION: '*/30 * * * *', // lịch tick hiện tại của hệ thống
+  ZERO_LAG_MINUTES: 30, // Buffer (safeNow) to prevent missing delayed logs from Microsoft
+  FORWARD_CRON_EXPRESSION: '*/30 * * * *', // System cron schedule for ongoing sync
 
-  // Phase 3 — Reconciliation (bắt delayed logs, tách biệt watermark chính)
-  RECONCILIATION_LOOKBACK_DAYS: 7, // quét lùi tối đa 7 ngày, khớp SLA delay tối đa của Microsoft
-  RECONCILIATION_INTERVAL_HOURS: 6, // tần suất chạy job reconciliation (độc lập với forward sync)
+  // Phase 3 — Reconciliation (Catches severely delayed logs, independent of main watermark)
+  RECONCILIATION_LOOKBACK_DAYS: 7, // Lookback period matching Microsoft's max delay SLA
+  RECONCILIATION_INTERVAL_HOURS: 6, // Execution frequency for the reconciliation job
 
   MAX_RETRY_PER_ID: 5,
 
@@ -17,6 +17,6 @@ export const SYNC_CONFIG = {
   DB_INSERT_CHUNK_SIZE: 1000,
   CONCURRENT_DOWNLOADS: 5,
   LOCK_TTL_MS: 30 * 60 * 1000,
-  STATE_WATERMARK_KEY: 'sharepoint_audit_forward', // as specified in plan: this.watermarkRepo.get('sharepoint_audit_forward')
+  STATE_WATERMARK_KEY: 'sharepoint_audit_forward', // Key for tracking ongoing sync state
   LOCK_KEY: 'sharepoint_sync_lock',
 } as const

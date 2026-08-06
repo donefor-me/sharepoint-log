@@ -1,11 +1,12 @@
 import {
-  Controller,
-  Post,
   Body,
+  Controller,
   HttpCode,
   HttpStatus,
+  Post,
   UnauthorizedException,
 } from '@nestjs/common'
+
 import { AuthService } from './auth.service'
 import { LoginDto } from './dto/login.dto'
 
@@ -15,13 +16,10 @@ export class AuthController {
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  async login(@Body() body: LoginDto) {
-    const user = await this.authService.validateUser(
-      body.username,
-      body.password,
-    )
+  async login(@Body() loginDto: LoginDto) {
+    const user = await this.authService.validateUser(loginDto)
     if (!user) {
-      throw new UnauthorizedException('Sai tài khoản hoặc mật khẩu')
+      throw new UnauthorizedException('Wrong username or password')
     }
     return this.authService.login(user)
   }

@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common'
-import { TypeOrmModule } from '@nestjs/typeorm'
 import { ConfigService } from '@nestjs/config'
+import { TypeOrmModule } from '@nestjs/typeorm'
+
 import { AuditLog, AuditLogSyncState } from '../modules/audit-log-sync'
 import { SharepointTokenCache } from '../modules/sharepoint'
 import { User } from '../modules/users'

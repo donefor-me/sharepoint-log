@@ -1,14 +1,15 @@
 import {
-  ExceptionFilter,
-  Catch,
   ArgumentsHost,
+  Catch,
+  ExceptionFilter,
   HttpException,
   HttpStatus,
 } from '@nestjs/common'
 import { Response } from 'express'
-import { ApiResponse } from '../interfaces/api-response.interface'
+
 import { DomainException } from '../exceptions/domain.exception'
 import { InfrastructureException } from '../exceptions/infrastructure.exception'
+import { ApiResponse } from '../interfaces/api-response.interface'
 import { Logger } from '../logger/logger.service'
 
 @Catch()

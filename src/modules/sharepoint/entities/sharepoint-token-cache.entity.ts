@@ -1,4 +1,4 @@
-import { Entity, Column, PrimaryColumn, UpdateDateColumn } from 'typeorm'
+import { Column, Entity, PrimaryColumn, UpdateDateColumn } from 'typeorm'
 
 @Entity('sharepoint_token_cache')
 export class SharepointTokenCache {

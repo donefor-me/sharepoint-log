@@ -1,15 +1,15 @@
+import { Logger } from '@common'
 import { Injectable } from '@nestjs/common'
 import { Cron } from '@nestjs/schedule'
-import { Logger } from '@common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
-import { AuditLogSyncState } from '../modules/audit-log-sync/entities/audit-log-sync-state.entity'
-import { AuditLogDlq } from '../modules/audit-log-sync/entities/audit-log-dlq.entity'
-import { SyncLockService } from '../modules/audit-log-sync/sync-lock.service'
-import { AuditLogSyncService } from '../modules/audit-log-sync/audit-log-sync.service'
-import { SharepointService } from '../modules/sharepoint/sharepoint.service'
-import { SYNC_CONFIG } from '../modules/audit-log-sync/constants/sync.constant'
 
+import { AuditLogSyncService } from '../modules/audit-log-sync/audit-log-sync.service'
+import { SYNC_CONFIG } from '../modules/audit-log-sync/constants/sync.constant'
+import { AuditLogDlq } from '../modules/audit-log-sync/entities/audit-log-dlq.entity'
+import { AuditLogSyncState } from '../modules/audit-log-sync/entities/audit-log-sync-state.entity'
+import { SyncLockService } from '../modules/audit-log-sync/sync-lock.service'
+import { SharepointService } from '../modules/sharepoint/sharepoint.service'
 import { splitIntoDailyWindows } from '../utils/date.util'
 
 @Injectable()

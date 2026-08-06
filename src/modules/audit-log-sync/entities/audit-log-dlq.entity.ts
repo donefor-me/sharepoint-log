@@ -1,10 +1,11 @@
 import {
-  Entity,
-  PrimaryColumn,
   Column,
   CreateDateColumn,
+  Entity,
+  PrimaryColumn,
   UpdateDateColumn,
 } from 'typeorm'
+
 import { AuditLogDlqStatus } from '../constants/dlq-status.constant'
 
 @Entity('audit_log_dlq')

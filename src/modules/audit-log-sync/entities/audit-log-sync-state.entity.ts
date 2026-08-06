@@ -1,4 +1,4 @@
-import { Entity, Column, PrimaryColumn, UpdateDateColumn } from 'typeorm'
+import { Column, Entity, PrimaryColumn, UpdateDateColumn } from 'typeorm'
 
 /**
  * Generic key-value store for audit log synchronization state.

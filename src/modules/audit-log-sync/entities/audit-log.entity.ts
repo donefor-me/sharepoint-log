@@ -1,4 +1,5 @@
-import { Entity, Column, PrimaryColumn, CreateDateColumn } from 'typeorm'
+import { Column, CreateDateColumn, Entity, PrimaryColumn } from 'typeorm'
+
 import type { Office365WorkloadType } from '../constants/workload.constant'
 
 @Entity('audit_logs')

@@ -5,7 +5,7 @@ export const envSchema = z
     NODE_ENV: z
       .enum(['development', 'production', 'test'])
       .default('development'),
-    PORT: z.coerce.number().default(3000),
+    PORT: z.coerce.number(),
     DB_HOST: z.string(),
     DB_PORT: z.coerce.number(),
     DB_USER: z.string(),
@@ -19,11 +19,11 @@ export const envSchema = z
       .min(16, 'Must be at least 16 characters')
       .max(128, 'Max 128 characters'),
     JWT_SECRET: z.string().min(8),
+    CORS_ORIGIN: z.string().transform((v) => v.split(',').map((s) => s.trim())),
   })
   .refine((env) => Buffer.byteLength(env.TOKEN_ENCRYPTION_KEY, 'utf-8') >= 32, {
     message: 'TOKEN_ENCRYPTION_KEY must encode to at least 32 bytes',
   })
-
 export type EnvironmentVariables = z.infer<typeof envSchema>
 
 /**
