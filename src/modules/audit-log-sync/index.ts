@@ -1,6 +1,0 @@
-export * from './audit-log-sync.module'
-export * from './audit-log-sync.service'
-export * from './entities/audit-log.entity'
-export * from './entities/audit-log-dlq.entity'
-export * from './entities/audit-log-sync-state.entity'
-export * from './sync-lock.service'

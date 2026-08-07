@@ -1,11 +1,11 @@
-import { Logger } from '@common'
-import { EncryptionException } from '@common'
-import { EnvironmentVariables } from '@config/env.validation'
+import { EnvironmentVariables } from '@core/config/env.validation'
+import { Logger } from '@core/logger/logger.service'
 import { Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import * as crypto from 'crypto'
 
 import { ENCRYPTION_CONFIG } from './constants/encryption.constant'
+import { EncryptionException } from './exceptions/encryption.exception'
 
 @Injectable()
 export class EncryptionService {

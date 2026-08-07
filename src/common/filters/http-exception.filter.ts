@@ -1,3 +1,4 @@
+import { Logger } from '@core/logger/logger.service'
 import {
   ArgumentsHost,
   Catch,
@@ -10,7 +11,6 @@ import { Response } from 'express'
 import { DomainException } from '../exceptions/domain.exception'
 import { InfrastructureException } from '../exceptions/infrastructure.exception'
 import { ApiResponse } from '../interfaces/api-response.interface'
-import { Logger } from '../logger/logger.service'
 
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {

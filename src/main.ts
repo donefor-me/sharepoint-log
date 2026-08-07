@@ -1,5 +1,5 @@
-import { Logger } from '@common'
-import { EnvironmentVariables } from '@config/env.validation'
+import { EnvironmentVariables } from '@core/config/env.validation'
+import { Logger } from '@core/logger/logger.service'
 import { ConfigService } from '@nestjs/config'
 import { NestFactory } from '@nestjs/core'
 

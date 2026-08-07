@@ -7,7 +7,8 @@
     "^.+\\.(t|j)s$": "ts-jest"
   },
   "moduleNameMapper": {
+    "^@core(.*)$": "<rootDir>/../src/core$1",
     "^@common(.*)$": "<rootDir>/../src/common$1",
-    "^@utils(.*)$": "<rootDir>/../src/utils$1"
+    "^@modules(.*)$": "<rootDir>/../src/modules$1"
   }
 }

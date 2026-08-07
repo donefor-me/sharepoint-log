@@ -4,7 +4,7 @@ import { DataSource } from 'typeorm'
 import { AuditLog } from './src/modules/audit-log-sync/entities/audit-log.entity'
 import { AuditLogDlq } from './src/modules/audit-log-sync/entities/audit-log-dlq.entity'
 import { AuditLogSyncState } from './src/modules/audit-log-sync/entities/audit-log-sync-state.entity'
-import { SharepointTokenCache } from './src/modules/sharepoint/entities/sharepoint-token-cache.entity'
+import { SharepointTokenCache } from './src/modules/sharepoint/integration/entities/sharepoint-token-cache.entity'
 import { User } from './src/modules/users/entities/user.entity'
 
 config()

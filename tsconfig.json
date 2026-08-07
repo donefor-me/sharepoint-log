@@ -15,11 +15,12 @@
     "outDir": "./dist",
     "baseUrl": "./",
     "paths": {
+      "@core": ["src/core"],
+      "@core/*": ["src/core/*"],
       "@common": ["src/common"],
       "@common/*": ["src/common/*"],
-      "@modules/*": ["src/modules/*"],
-      "@utils/*": ["src/utils/*"],
-      "@config/*": ["src/config/*"]
+      "@modules": ["src/modules"],
+      "@modules/*": ["src/modules/*"]
     },
     "incremental": true,
     "skipLibCheck": true,
