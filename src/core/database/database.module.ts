@@ -3,8 +3,7 @@ import { ConfigService } from '@nestjs/config'
 import { TypeOrmModule } from '@nestjs/typeorm'
 import { SnakeNamingStrategy } from 'typeorm-naming-strategies'
 
-import { User } from '../../modules/users/entities/user.entity'
-import { DatabaseSeederService } from './database-seeder.service'
+import { SeederModule } from './seeder/seeder.module'
 
 @Module({
   imports: [
@@ -22,8 +21,7 @@ import { DatabaseSeederService } from './database-seeder.service'
         synchronize: false,
       }),
     }),
-    TypeOrmModule.forFeature([User]),
+    SeederModule,
   ],
-  providers: [DatabaseSeederService],
 })
 export class DatabaseModule {}

@@ -24,7 +24,6 @@ import { AuditLogSyncTask } from './tasks/audit-log-sync.task'
     AuditLogSyncTask,
   ],
   exports: [
-    TypeOrmModule,
     AuditLogQueryService,
     AuditLogSyncService,
     SyncLockService,

@@ -76,7 +76,7 @@ export class AuditLogSyncService {
     while (hasMore) {
       const pendingLogs = await this.dlqRepo.find({
         where: { status: AuditLogDlqStatus.PENDING },
-        order: { createdAt: 'ASC' },
+        order: { retryCount: 'ASC', createdAt: 'ASC' },
         take: 1000,
         skip: skipRecords,
       })
@@ -160,7 +160,7 @@ export class AuditLogSyncService {
           .map((log: any) => ({
             id: String(log.Id),
             contentId: contentId,
-            creationTime: log.CreationTime,
+            creationTime: log.CreationTime ? new Date(log.CreationTime) : null,
             operation: log.Operation,
             workload: log.Workload as Office365WorkloadType,
             userId: log.UserId,

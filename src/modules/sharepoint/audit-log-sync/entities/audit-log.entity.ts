@@ -1,8 +1,9 @@
-import { Column, CreateDateColumn, Entity, PrimaryColumn } from 'typeorm'
+import { Column, CreateDateColumn, Entity, Index, PrimaryColumn } from 'typeorm'
 
 import type { Office365WorkloadType } from '../constants/workload.constant'
 
 @Entity('audit_logs')
+@Index(['creationTime', 'operation'])
 export class AuditLog {
   @PrimaryColumn('uuid')
   id: string
@@ -10,9 +11,11 @@ export class AuditLog {
   @Column({ nullable: true })
   contentId: string
 
-  @Column({ nullable: true })
-  creationTime: string
+  @Index()
+  @Column({ type: 'timestamp', nullable: true })
+  creationTime: Date
 
+  @Index()
   @Column({ nullable: true })
   operation: string
 
@@ -20,9 +23,11 @@ export class AuditLog {
    * Office 365 service categorization (e.g., SharePoint, Exchange).
    * @see Office365Workload
    */
+  @Index()
   @Column({ type: 'varchar', nullable: true })
   workload: Office365WorkloadType
 
+  @Index()
   @Column({ nullable: true })
   userId: string
 

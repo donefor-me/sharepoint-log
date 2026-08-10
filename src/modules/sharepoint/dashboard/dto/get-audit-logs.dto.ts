@@ -1,8 +1,19 @@
 import { createZodDto } from 'nestjs-zod'
 import { z } from 'zod'
 
+import { SHAREPOINT_OPERATIONS } from '../../constants/sharepoint-operations.constant'
+
 export const GetAuditLogsSchema = z.object({
-  operation: z.string().optional(),
+  operation: z
+    .string()
+    .transform((val) =>
+      val
+        .split(',')
+        .map((op) => op.trim())
+        .filter(Boolean),
+    )
+    .pipe(z.array(z.enum(SHAREPOINT_OPERATIONS)).min(1))
+    .optional(),
   userId: z.string().optional(),
   userName: z.string().optional(),
   fileName: z.string().optional(),

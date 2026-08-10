@@ -1,9 +1,10 @@
 import { config } from 'dotenv'
 import { DataSource } from 'typeorm'
+import { SnakeNamingStrategy } from 'typeorm-naming-strategies'
 
-import { AuditLog } from './src/modules/audit-log-sync/entities/audit-log.entity'
-import { AuditLogDlq } from './src/modules/audit-log-sync/entities/audit-log-dlq.entity'
-import { AuditLogSyncState } from './src/modules/audit-log-sync/entities/audit-log-sync-state.entity'
+import { AuditLog } from './src/modules/sharepoint/audit-log-sync/entities/audit-log.entity'
+import { AuditLogDlq } from './src/modules/sharepoint/audit-log-sync/entities/audit-log-dlq.entity'
+import { AuditLogSyncState } from './src/modules/sharepoint/audit-log-sync/entities/audit-log-sync-state.entity'
 import { SharepointTokenCache } from './src/modules/sharepoint/integration/entities/sharepoint-token-cache.entity'
 import { User } from './src/modules/users/entities/user.entity'
 
@@ -23,6 +24,7 @@ export default new DataSource({
     User,
     AuditLogDlq,
   ],
-  migrations: ['src/database/migrations/*.ts'],
+  migrations: ['src/core/database/migrations/*.ts'],
+  namingStrategy: new SnakeNamingStrategy(),
   synchronize: false,
 })

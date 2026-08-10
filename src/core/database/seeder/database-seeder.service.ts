@@ -1,14 +1,14 @@
 import { Logger } from '@core/logger/logger.service'
-import { Injectable, OnApplicationBootstrap } from '@nestjs/common'
+import { Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { InjectRepository } from '@nestjs/typeorm'
 import * as bcrypt from 'bcrypt'
 import { Repository } from 'typeorm'
 
-import { User } from '../../modules/users/entities/user.entity'
+import { User } from '../../../modules/users/entities/user.entity'
 
 @Injectable()
-export class DatabaseSeederService implements OnApplicationBootstrap {
+export class DatabaseSeederService {
   private readonly logger = new Logger(DatabaseSeederService.name)
 
   constructor(
@@ -17,7 +17,7 @@ export class DatabaseSeederService implements OnApplicationBootstrap {
     private readonly configService: ConfigService,
   ) {}
 
-  async onApplicationBootstrap() {
+  async seed() {
     const adminExists = await this.userRepository.findOne({
       where: { username: 'admin' },
     })
@@ -35,6 +35,8 @@ export class DatabaseSeederService implements OnApplicationBootstrap {
 
       await this.userRepository.save(admin)
       this.logger.log('Admin user successfully seeded.')
+    } else {
+      this.logger.log('Admin user already exists.')
     }
   }
 }

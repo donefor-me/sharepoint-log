@@ -2,7 +2,17 @@ import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 
-import { GetAuditLogsDto } from '../dashboard/dto/get-audit-logs.dto'
+export interface AuditLogQueryOptions {
+  operation?: string[]
+  userId?: string
+  userName?: string
+  fileName?: string
+  workload?: string
+  startDate?: string
+  endDate?: string
+  page?: number
+  limit?: number
+}
 import { AuditLog } from './entities/audit-log.entity'
 import { AuditLogSyncState } from './entities/audit-log-sync-state.entity'
 
@@ -15,7 +25,9 @@ export class AuditLogQueryService {
     private readonly auditLogSyncStateRepository: Repository<AuditLogSyncState>,
   ) {}
 
-  async queryLogs(dto: GetAuditLogsDto): Promise<[AuditLog[], number]> {
+  async queryLogs(
+    options: AuditLogQueryOptions,
+  ): Promise<[AuditLog[], number]> {
     const {
       operation,
       userId,
@@ -26,12 +38,12 @@ export class AuditLogQueryService {
       endDate,
       page = 1,
       limit = 10,
-    } = dto
+    } = options
 
     const query = this.auditLogRepository.createQueryBuilder('log')
 
-    if (operation) {
-      query.andWhere('log.operation = :operation', { operation })
+    if (operation && operation.length > 0) {
+      query.andWhere('log.operation IN (:...operation)', { operation })
     }
 
     if (userId) {
