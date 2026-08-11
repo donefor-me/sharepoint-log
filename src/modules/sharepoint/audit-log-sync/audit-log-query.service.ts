@@ -76,6 +76,14 @@ export class AuditLogQueryService {
     }
 
     query.orderBy('log.creationTime', 'DESC')
+    query.select([
+      'log.id',
+      'log.creationTime',
+      'log.operation',
+      'log.userId',
+      'log.objectId',
+      'log.itemName',
+    ])
     query.skip((page - 1) * limit).take(limit)
 
     return query.getManyAndCount()
