@@ -38,7 +38,6 @@ export class TransformInterceptor<T> implements NestInterceptor<
 
     return next.handle().pipe(
       map((res) => {
-        // Check if the response already has a meta field (e.g., from a paginated service)
         if (
           res &&
           typeof res === 'object' &&
@@ -51,7 +50,6 @@ export class TransformInterceptor<T> implements NestInterceptor<
           }
         }
 
-        // Standard wrapping for raw data
         return {
           message,
           data: res,

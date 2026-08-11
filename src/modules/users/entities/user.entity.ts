@@ -1,21 +1,12 @@
-import {
-  Column,
-  CreateDateColumn,
-  Entity,
-  PrimaryGeneratedColumn,
-} from 'typeorm'
+import { Column, Entity } from 'typeorm'
+
+import { AbstractEntity } from '../../../common/entities/abstract.entity'
 
 @Entity('users')
-export class User {
-  @PrimaryGeneratedColumn('uuid')
-  id: string
-
+export class User extends AbstractEntity {
   @Column({ unique: true })
   username: string
 
   @Column()
   password?: string
-
-  @CreateDateColumn()
-  createdAt: Date
 }

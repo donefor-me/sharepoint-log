@@ -1,14 +1,8 @@
 import { Logger } from '@core/logger/logger.service'
-import { ConfigModule } from '@nestjs/config'
 import { Test, TestingModule } from '@nestjs/testing'
-import { getRepositoryToken, TypeOrmModule } from '@nestjs/typeorm'
-import {
-  PostgreSqlContainer,
-  StartedPostgreSqlContainer,
-} from '@testcontainers/postgresql'
+import { getRepositoryToken } from '@nestjs/typeorm'
 import { randomUUID } from 'crypto'
 import { DataSource, Repository } from 'typeorm'
-import { SnakeNamingStrategy } from 'typeorm-naming-strategies'
 
 import { LoggerModule } from '../src/core/logger/logger.module'
 import { EncryptionService } from '../src/modules/encryption/encryption.service'
@@ -22,9 +16,9 @@ import { AuditLogSyncState } from '../src/modules/sharepoint/audit-log-sync/enti
 import { SyncLockService } from '../src/modules/sharepoint/audit-log-sync/sync-lock.service'
 import { AuditLogSyncTask } from '../src/modules/sharepoint/audit-log-sync/tasks/audit-log-sync.task'
 import { SharepointService } from '../src/modules/sharepoint/integration/sharepoint.service'
+import { TestDatabaseModule } from './utils/test-database.module'
 
 describe('AuditLogSync Workflow (e2e)', () => {
-  let container: StartedPostgreSqlContainer
   let dataSource: DataSource
   let moduleFixture: TestingModule
   let syncTask: AuditLogSyncTask
@@ -81,27 +75,8 @@ describe('AuditLogSync Workflow (e2e)', () => {
   }
 
   beforeAll(async () => {
-    container = await new PostgreSqlContainer('postgres:15-alpine').start()
-    await new Promise((resolve) => setTimeout(resolve, 10000)) // Wait for PostgreSQL to be fully ready
-
     moduleFixture = await Test.createTestingModule({
-      imports: [
-        LoggerModule,
-        ConfigModule.forRoot({ isGlobal: true }),
-        TypeOrmModule.forRoot({
-          type: 'postgres',
-          host: container.getHost(),
-          port: container.getPort(),
-          username: container.getUsername(),
-          password: container.getPassword(),
-          database: container.getDatabase(),
-          entities: [AuditLog, AuditLogDlq, AuditLogSyncState],
-          namingStrategy: new SnakeNamingStrategy(),
-          keepConnectionAlive: true,
-          synchronize: true,
-        }),
-        AuditLogSyncModule,
-      ],
+      imports: [LoggerModule, TestDatabaseModule, AuditLogSyncModule],
     })
       .overrideProvider(SharepointService)
       .useValue(mockSharepointService)
@@ -132,9 +107,6 @@ describe('AuditLogSync Workflow (e2e)', () => {
   afterAll(async () => {
     if (moduleFixture) {
       await moduleFixture.close()
-    }
-    if (container) {
-      await container.stop()
     }
   })
 
@@ -185,8 +157,8 @@ describe('AuditLogSync Workflow (e2e)', () => {
     it('FS-03 & FS-04: Xử lý khối lượng dữ liệu siêu lớn (Massive logs > chunk size)', async () => {
       const originalChunkSize = SYNC_CONFIG.DB_INSERT_CHUNK_SIZE
       const originalConcurrency = SYNC_CONFIG.CONCURRENT_DOWNLOADS
-      jest.replaceProperty(SYNC_CONFIG, 'DB_INSERT_CHUNK_SIZE', 500)
-      jest.replaceProperty(SYNC_CONFIG, 'CONCURRENT_DOWNLOADS', 1)
+      jest.replaceProperty(SYNC_CONFIG as any, 'DB_INSERT_CHUNK_SIZE', 500)
+      jest.replaceProperty(SYNC_CONFIG as any, 'CONCURRENT_DOWNLOADS', 1)
 
       try {
         const mockLargeData = Array.from({ length: 750 }).map((_, i) => ({
@@ -235,7 +207,7 @@ describe('AuditLogSync Workflow (e2e)', () => {
         }),
       )
       await auditLogRepo.save({
-        id: '00000000-0000-0000-0000-000000000001',
+        microsoftId: '00000000-0000-0000-0000-000000000001',
         contentId: 'id_old',
         creationTime: new Date().toISOString(),
         operation: 'OldOp',
@@ -272,7 +244,7 @@ describe('AuditLogSync Workflow (e2e)', () => {
           ? args[0].some((item) => item.contentUri === 'uri_old')
           : args[0].contentUri === 'uri_old',
       )
-      expect(callsWithUriOld.length).toBe(0) // uri_old is bypassed entirely in DLQ insertion
+      expect(callsWithUriOld.length).toBe(0)
       saveSpy.mockRestore()
     })
 
@@ -474,7 +446,7 @@ describe('AuditLogSync Workflow (e2e)', () => {
       await syncTask.handleForwardSync()
 
       const dlqCount = await dlqRepo.count({ where: { contentId: 'id_dup' } })
-      expect(dlqCount).toBe(1) // UPSERT/Ignore should resolve dups
+      expect(dlqCount).toBe(1)
     })
 
     it('EXT-03: Empty Content - Log list có nhưng content rỗng', async () => {
@@ -499,7 +471,6 @@ describe('AuditLogSync Workflow (e2e)', () => {
           Id: '00000000-0000-0000-0000-000000000002',
           Operation: 'MockOp',
           Workload: 'SharePoint',
-          // Missing CreationTime -> Allowed because creationTime is nullable
         },
       ])
 
@@ -518,7 +489,7 @@ describe('AuditLogSync Workflow (e2e)', () => {
     it('EXT-06: Upsert Conflict - Idempotency for Existing ID', async () => {
       const conflictId = '00000000-0000-0000-0000-000000000003'
       await auditLogRepo.save({
-        id: conflictId,
+        microsoftId: conflictId,
         contentId: 'id_conflict',
         creationTime: new Date().toISOString(),
         operation: 'PreExisting',
@@ -544,7 +515,7 @@ describe('AuditLogSync Workflow (e2e)', () => {
         where: { contentId: 'id_conflict' },
       })
       expect(audits.length).toBe(1)
-      expect(audits[0].operation).toBe('PreExisting') // Not overwritten
+      expect(audits[0].operation).toBe('PreExisting')
     })
 
     it('EXT-07: Lock Renewal - Heartbeat via setInterval', async () => {
@@ -554,7 +525,7 @@ describe('AuditLogSync Workflow (e2e)', () => {
         { contentUri: 'uri_slow', contentId: 'id_slow' },
       ])
       mockSharepointService.fetchActivityContent.mockImplementation((uri) => {
-        jest.advanceTimersByTime(125 * 1000) // fake long running task > 120s
+        jest.advanceTimersByTime(125 * 1000)
         return Promise.resolve([createMockActivity(uri)])
       })
 
@@ -575,7 +546,7 @@ describe('AuditLogSync Workflow (e2e)', () => {
       await syncTask.handleForwardSync()
 
       const count = await dlqRepo.count()
-      expect(count).toBe(0) // Should skip invalid inputs gracefully
+      expect(count).toBe(0)
     })
   })
 })

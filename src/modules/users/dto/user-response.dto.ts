@@ -1,5 +1,5 @@
 export class UserResponseDto {
-  id: string
+  id: number
   username: string
   createdAt: Date
 }

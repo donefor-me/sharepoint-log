@@ -1,4 +1,6 @@
-import { Column, Entity, PrimaryColumn, UpdateDateColumn } from 'typeorm'
+import { Column, Entity } from 'typeorm'
+
+import { AbstractEntity } from '../../../../common/entities/abstract.entity'
 
 /**
  * Generic key-value store for audit log synchronization state.
@@ -12,16 +14,13 @@ import { Column, Entity, PrimaryColumn, UpdateDateColumn } from 'typeorm'
  * Both columns are nullable because each row only uses one of them.
  */
 @Entity('audit_log_sync_states')
-export class AuditLogSyncState {
-  @PrimaryColumn()
+export class AuditLogSyncState extends AbstractEntity {
+  @Column({ unique: true })
   key: string
 
-  @Column({ nullable: true })
-  value?: Date
+  @Column({ type: 'timestamp', nullable: true })
+  value: Date | null
 
-  @Column({ nullable: true })
-  lockedUntil?: Date
-
-  @UpdateDateColumn()
-  updatedAt: Date
+  @Column({ type: 'timestamp', nullable: true })
+  lockedUntil: Date | null
 }

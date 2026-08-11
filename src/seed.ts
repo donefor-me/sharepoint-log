@@ -5,7 +5,6 @@ import { DatabaseSeederService } from './core/database/seeder/database-seeder.se
 import { SeederModule } from './core/database/seeder/seeder.module'
 
 async function bootstrap() {
-  // We can create a standalone application context
   const app = await NestFactory.createApplicationContext(AppModule)
   const seeder = app.select(SeederModule).get(DatabaseSeederService)
 

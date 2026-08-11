@@ -3,7 +3,7 @@ import { withRetry } from '@common/utils/http-retry.util'
 import { Logger } from '@core/logger/logger.service'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { DataSource, Repository } from 'typeorm'
+import { DataSource, In, Repository } from 'typeorm'
 
 import { SharepointContentDto } from '../integration/dto/sharepoint-management.dto'
 import { SharepointService } from '../integration/sharepoint.service'
@@ -116,9 +116,12 @@ export class AuditLogSyncService {
         )
 
         if (doneLogUris.length > 0) {
-          await this.dlqRepo.update(doneLogUris, {
-            status: AuditLogDlqStatus.DONE,
-          })
+          await this.dlqRepo.update(
+            { contentUri: In(doneLogUris) },
+            {
+              status: AuditLogDlqStatus.DONE,
+            },
+          )
         }
 
         if (failedLogs.length > 0) {
@@ -158,7 +161,7 @@ export class AuditLogSyncService {
       for (const chunk of chunkArray(rawLogs, 1000)) {
         const entities = chunk
           .map((log: any) => ({
-            id: String(log.Id),
+            microsoftId: String(log.Id),
             contentId: contentId,
             creationTime: log.CreationTime ? new Date(log.CreationTime) : null,
             operation: log.Operation,
@@ -168,7 +171,7 @@ export class AuditLogSyncService {
             itemName: log.ItemName,
             rawData: log,
           }))
-          .sort((a, b) => a.id.localeCompare(b.id))
+          .sort((a, b) => a.microsoftId.localeCompare(b.microsoftId))
 
         await tx
           .createQueryBuilder()

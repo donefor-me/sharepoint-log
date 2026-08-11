@@ -22,7 +22,6 @@ export interface AppAccessContextDto {
 }
 
 export interface SharepointActivityDto {
-  // Core Fields
   CreationTime: string
   Id: string
   Operation: string
@@ -37,7 +36,6 @@ export interface SharepointActivityDto {
   ObjectId?: string
   CorrelationId?: string
 
-  // SharePoint / OneDrive Specific Fields
   ApplicationId?: string
   ApplicationDisplayName?: string
   AuthenticationType?: string
@@ -62,9 +60,7 @@ export interface SharepointActivityDto {
   SourceFileName?: string
   SourceFileExtension?: string
 
-  // App Access Context
   AppAccessContext?: AppAccessContextDto
 
-  // Allow for other unforeseen properties
   [key: string]: unknown
 }

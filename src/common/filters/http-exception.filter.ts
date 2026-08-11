@@ -22,7 +22,6 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const ctx = host.switchToHttp()
     const response = ctx.getResponse<Response>()
 
-    // Log all exceptions with stack trace for observability
     if (exception instanceof Error) {
       this.logger.error(exception.message, exception.stack)
     } else {

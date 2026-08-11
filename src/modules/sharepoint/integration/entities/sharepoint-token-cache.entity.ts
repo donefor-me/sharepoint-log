@@ -1,10 +1,9 @@
-import { Column, Entity, PrimaryColumn, UpdateDateColumn } from 'typeorm'
+import { Column, Entity } from 'typeorm'
+
+import { AbstractEntity } from '../../../../common/entities/abstract.entity'
 
 @Entity('sharepoint_token_cache')
-export class SharepointTokenCache {
-  @PrimaryColumn()
-  id: string
-
+export class SharepointTokenCache extends AbstractEntity {
   @Column({ type: 'text' })
   accessToken: string
 
@@ -16,7 +15,4 @@ export class SharepointTokenCache {
 
   @Column({ type: 'bigint' })
   calculatedExpiresAt: number
-
-  @UpdateDateColumn()
-  updatedAt: Date
 }

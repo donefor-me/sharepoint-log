@@ -1,45 +1,40 @@
-import { Column, CreateDateColumn, Entity, Index, PrimaryColumn } from 'typeorm'
+import { Column, Entity, Index } from 'typeorm'
 
+import { AbstractEntity } from '../../../../common/entities/abstract.entity'
 import type { Office365WorkloadType } from '../constants/workload.constant'
 
 @Entity('audit_logs')
-@Index(['creationTime', 'operation'])
-export class AuditLog {
-  @PrimaryColumn('uuid')
-  id: string
+export class AuditLog extends AbstractEntity {
+  @Column({ unique: true })
+  microsoftId: string
 
-  @Column({ nullable: true })
-  contentId: string
+  @Column({ type: 'varchar', nullable: true })
+  contentId: string | null
 
   @Index()
   @Column({ type: 'timestamp', nullable: true })
-  creationTime: Date
+  creationTime: Date | null
 
-  @Index()
-  @Column({ nullable: true })
-  operation: string
+  @Column({ type: 'varchar', nullable: true })
+  operation: string | null
 
   /**
    * Office 365 service categorization (e.g., SharePoint, Exchange).
    * @see Office365Workload
    */
+  @Column({ type: 'varchar', nullable: true })
+  workload: Office365WorkloadType | null
+
   @Index()
   @Column({ type: 'varchar', nullable: true })
-  workload: Office365WorkloadType
+  userId: string | null
 
-  @Index()
-  @Column({ nullable: true })
-  userId: string
+  @Column({ type: 'varchar', nullable: true })
+  objectId: string | null
 
-  @Column({ nullable: true })
-  objectId: string
-
-  @Column({ nullable: true })
-  itemName: string
+  @Column({ type: 'varchar', nullable: true })
+  itemName: string | null
 
   @Column({ type: 'jsonb', nullable: true })
-  rawData: Record<string, unknown>
-
-  @CreateDateColumn()
-  createdAt: Date
+  rawData: Record<string, unknown> | null
 }

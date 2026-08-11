@@ -1,16 +1,11 @@
-import {
-  Column,
-  CreateDateColumn,
-  Entity,
-  PrimaryColumn,
-  UpdateDateColumn,
-} from 'typeorm'
+import { Column, Entity } from 'typeorm'
 
+import { AbstractEntity } from '../../../../common/entities/abstract.entity'
 import { AuditLogDlqStatus } from '../constants/dlq-status.constant'
 
 @Entity('audit_log_dlq')
-export class AuditLogDlq {
-  @PrimaryColumn({ type: 'varchar' })
+export class AuditLogDlq extends AbstractEntity {
+  @Column({ type: 'varchar', unique: true })
   contentUri: string
 
   @Column({ type: 'varchar' })
@@ -24,14 +19,8 @@ export class AuditLogDlq {
   status: AuditLogDlqStatus
 
   @Column({ type: 'text', nullable: true })
-  errorReason: string
+  errorReason: string | null
 
   @Column({ type: 'int', default: 0 })
   retryCount: number
-
-  @CreateDateColumn()
-  createdAt: Date
-
-  @UpdateDateColumn()
-  updatedAt: Date
 }

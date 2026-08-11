@@ -53,7 +53,6 @@ export class AuditLogSyncTask {
       return
     }
 
-    // Gia hạn khoá tự động mỗi 1 phút để tránh bị steal nếu job chạy quá lâu
     const renewalInterval = setInterval(() => {
       this.syncLockService
         .renewLock()
@@ -137,7 +136,6 @@ export class AuditLogSyncTask {
       return
     }
 
-    // Gia hạn khoá tự động mỗi 1 phút
     const renewalInterval = setInterval(() => {
       this.syncLockService
         .renewLock()

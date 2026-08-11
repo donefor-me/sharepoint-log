@@ -6,7 +6,7 @@ import { EncryptionService } from '../../../encryption/encryption.service'
 import { SharepointAuthResponseDto } from '../dto/sharepoint-auth-response.dto'
 import { SharepointTokenCache } from '../entities/sharepoint-token-cache.entity'
 
-const DEFAULT_CACHE_ID = 'DEFAULT'
+const DEFAULT_CACHE_ID = 1
 const TOKEN_EXPIRY_BUFFER_MS = 5 * 60 * 1000
 const SECONDS_TO_MS_MULTIPLIER = 1000
 
