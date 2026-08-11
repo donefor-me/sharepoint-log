@@ -44,7 +44,7 @@ export class AuditLogSyncTask {
    *
    * @returns {Promise<void>} - Resolves when complete.
    */
-  @Cron(SYNC_CONFIG.FORWARD_CRON_EXPRESSION)
+  @Cron('*/30 * * * *')
   async handleForwardSync(): Promise<void> {
     this.logger.log('Starting forward sync orchestrator...')
     const locked = await this.syncLockService.acquire()
@@ -125,7 +125,7 @@ export class AuditLogSyncTask {
    *
    * @returns {Promise<void>} - Resolves when complete.
    */
-  @Cron(`0 */${SYNC_CONFIG.RECONCILIATION_INTERVAL_HOURS} * * *`)
+  @Cron('0 */6 * * *')
   async handleReconciliationSync(): Promise<void> {
     this.logger.log('Starting reconciliation sync orchestrator...')
     const locked = await this.syncLockService.acquire()
