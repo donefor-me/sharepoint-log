@@ -1,3 +1,4 @@
+import { EnvironmentVariables } from '@core/config/env.validation'
 import { Logger } from '@core/logger/logger.service'
 import { Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
@@ -14,7 +15,7 @@ export class DatabaseSeederService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
-    private readonly configService: ConfigService,
+    private readonly configService: ConfigService<EnvironmentVariables>,
   ) {}
 
   async seed() {
@@ -25,7 +26,8 @@ export class DatabaseSeederService {
       this.logger.log('Admin user not found. Seeding initial admin user...')
 
       const adminPassword =
-        this.configService.get<string>('ADMIN_DEFAULT_PASSWORD') || 'admin'
+        this.configService.get('ADMIN_DEFAULT_PASSWORD', { infer: true }) ||
+        'admin'
       const hashedPassword = await bcrypt.hash(adminPassword, 10)
 
       const admin = this.userRepository.create({

@@ -1,3 +1,4 @@
+import { EnvironmentVariables } from '@core/config/env.validation'
 import {
   CanActivate,
   ExecutionContext,
@@ -12,7 +13,7 @@ import { Request } from 'express'
 export class AuthGuard implements CanActivate {
   constructor(
     private jwtService: JwtService,
-    private configService: ConfigService,
+    private configService: ConfigService<EnvironmentVariables>,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -23,7 +24,7 @@ export class AuthGuard implements CanActivate {
     }
     try {
       const payload = await this.jwtService.verifyAsync(token, {
-        secret: this.configService.get<string>('JWT_SECRET') as string,
+        secret: this.configService.get('JWT_SECRET', { infer: true })!,
       })
       request['user'] = payload
     } catch {

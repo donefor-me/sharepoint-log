@@ -1,4 +1,5 @@
 import { withRetry } from '@common/utils/http-retry.util'
+import { EnvironmentVariables } from '@core/config/env.validation'
 import { HttpClientService } from '@core/http-client/http-client.service'
 import { Logger } from '@core/logger/logger.service'
 import { Injectable } from '@nestjs/common'
@@ -31,12 +32,12 @@ export class SharepointService {
    */
   constructor(
     private readonly httpClient: HttpClientService,
-    private readonly configService: ConfigService,
+    private readonly configService: ConfigService<EnvironmentVariables>,
     private readonly logger: Logger,
     private readonly tokenCacheRepository: SharepointTokenCacheRepository,
   ) {
     this.logger.setContext(SharepointService.name)
-    this.tenantId = this.configService.getOrThrow<string>('sharepoint.tenantId')
+    this.tenantId = this.configService.get('O365_TENANT_ID', { infer: true })!
   }
 
   /**
@@ -50,10 +51,10 @@ export class SharepointService {
     const cachedToken = await this.tokenCacheRepository.getValidToken()
     if (cachedToken) return cachedToken
 
-    const clientId = this.configService.get<string>('sharepoint.clientId')
-    const clientSecret = this.configService.get<string>(
-      'sharepoint.clientSecret',
-    )
+    const clientId = this.configService.get('O365_CLIENT_ID', { infer: true })!
+    const clientSecret = this.configService.get('O365_CLIENT_SECRET', {
+      infer: true,
+    })!
 
     if (!clientId || !clientSecret) {
       throw new SharepointApiException('Missing SharePoint API configuration')

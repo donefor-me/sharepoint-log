@@ -1,3 +1,4 @@
+import { EnvironmentVariables } from '@core/config/env.validation'
 import { Module } from '@nestjs/common'
 import { ConfigModule, ConfigService } from '@nestjs/config'
 import { JwtModule } from '@nestjs/jwt'
@@ -11,8 +12,8 @@ import { AuthService } from './auth.service'
     UsersModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_SECRET'),
+      useFactory: (configService: ConfigService<EnvironmentVariables>) => ({
+        secret: configService.get('JWT_SECRET', { infer: true })!,
         signOptions: { expiresIn: '1d' }, // TODO: ADD TO .ENV
       }),
       inject: [ConfigService],
