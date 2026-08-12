@@ -1,8 +1,7 @@
 import { withRetry } from '@common/utils/http-retry.util'
 import { EnvironmentVariables } from '@core/config/env.validation'
 import { HttpClientService } from '@core/http-client/http-client.service'
-import { Logger } from '@core/logger/logger.service'
-import { Injectable } from '@nestjs/common'
+import { Injectable, Logger } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import * as qs from 'qs'
 
@@ -20,6 +19,7 @@ import { SharepointTokenCacheRepository } from './repositories/sharepoint-token-
 export class SharepointService {
   private readonly tenantId: string
   private readonly ALLOWED_API_PREFIX = 'https://manage.office.com/api/v1.0/'
+  private readonly logger = new Logger(SharepointService.name)
 
   /**
    * Initializes the SharepointService, sets up logging context, and retrieves the tenantId from config.
@@ -33,10 +33,8 @@ export class SharepointService {
   constructor(
     private readonly httpClient: HttpClientService,
     private readonly configService: ConfigService<EnvironmentVariables>,
-    private readonly logger: Logger,
     private readonly tokenCacheRepository: SharepointTokenCacheRepository,
   ) {
-    this.logger.setContext(SharepointService.name)
     this.tenantId = this.configService.get('O365_TENANT_ID', { infer: true })!
   }
 
@@ -78,7 +76,7 @@ export class SharepointService {
       return data.access_token
     } catch (error: any) {
       this.logger.error(
-        `Authentication request failed. Error: ${error.message}`,
+        `[SharepointAPI:Auth] Authentication request failed | error="${error.message}"`,
       )
       throw new SharepointApiException(error.message)
     }

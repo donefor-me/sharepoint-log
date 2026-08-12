@@ -1,6 +1,5 @@
 import { splitIntoDailyWindows } from '@common/utils/date.util'
-import { Logger } from '@core/logger/logger.service'
-import { Injectable } from '@nestjs/common'
+import { Injectable, Logger } from '@nestjs/common'
 import { Cron } from '@nestjs/schedule'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
@@ -8,35 +7,28 @@ import { Repository } from 'typeorm'
 import { SharepointService } from '../../integration/sharepoint.service'
 import { AuditLogSyncService } from '../audit-log-sync.service'
 import { SYNC_CONFIG } from '../constants/sync.constant'
-import { AuditLogDlq } from '../entities/audit-log-dlq.entity'
 import { AuditLogSyncState } from '../entities/audit-log-sync-state.entity'
 import { SyncLockService } from '../sync-lock.service'
 
 @Injectable()
 export class AuditLogSyncTask {
+  private readonly logger = new Logger(AuditLogSyncTask.name)
   /**
    * Initializes the AuditLogSyncTask and sets up the logger context.
    *
    * @param {Repository<AuditLogSyncState>} syncStateRepo - Repository for synchronization state.
-   * @param {Repository<AuditLogDlq>} dlqRepo - Repository for the dead letter queue.
    * @param {SyncLockService} syncLockService - Service for distributed locking.
    * @param {SharepointService} sharepointService - Service to interact with SharePoint API.
    * @param {AuditLogSyncService} syncService - Service to process fetched audit logs.
-   * @param {Logger} logger - The logger instance.
    * @returns {void}
    */
   constructor(
     @InjectRepository(AuditLogSyncState)
     private readonly syncStateRepo: Repository<AuditLogSyncState>,
-    @InjectRepository(AuditLogDlq)
-    private readonly dlqRepo: Repository<AuditLogDlq>,
     private readonly syncLockService: SyncLockService,
     private readonly sharepointService: SharepointService,
     private readonly syncService: AuditLogSyncService,
-    private readonly logger: Logger,
-  ) {
-    this.logger.setContext(AuditLogSyncTask.name)
-  }
+  ) {}
 
   /**
    * Orchestrates the forward synchronization of SharePoint audit logs.
@@ -46,17 +38,23 @@ export class AuditLogSyncTask {
    */
   @Cron('*/30 * * * *')
   async handleForwardSync(): Promise<void> {
-    this.logger.log('Starting forward sync orchestrator...')
+    this.logger.log('[Sync:Forward] Starting forward sync orchestrator...')
     const locked = await this.syncLockService.acquire()
     if (!locked) {
-      this.logger.warn('Skipping forward sync: lock held by another instance')
+      this.logger.warn(
+        '[Sync:Forward] Skipping sync | reason="lock held by another instance"',
+      )
       return
     }
 
     const renewalInterval = setInterval(() => {
       this.syncLockService
         .renewLock()
-        .catch((e) => this.logger.error('Failed to renew lock', e))
+        .catch((e) =>
+          this.logger.error(
+            `[Sync:Lock] Failed to renew lock | error="${e.message}"`,
+          ),
+        )
     }, 60 * 1000)
 
     try {
@@ -77,7 +75,7 @@ export class AuditLogSyncTask {
 
       if (targetWatermarkMs <= watermarkMs) {
         this.logger.log(
-          'Forward sync: đã đuổi kịp safe window, không có gì để làm',
+          '[Sync:Forward] Caught up to safe window, nothing to fetch',
         )
         return
       }
@@ -86,7 +84,7 @@ export class AuditLogSyncTask {
       const end = new Date(targetWatermarkMs)
 
       this.logger.log(
-        `Forward sync: fetching [${start.toISOString()} → ${end.toISOString()}]`,
+        `[Sync:Forward] Fetching audit logs | start="${start.toISOString()}" end="${end.toISOString()}"`,
       )
 
       const files = await this.sharepointService.fetchAllLogs({
@@ -105,14 +103,19 @@ export class AuditLogSyncTask {
         }
         state.value = end
         await this.syncStateRepo.save(state)
-        this.logger.log(`Forward sync: completed up to ${end.toISOString()}`)
+        this.logger.log(
+          `[Sync:Forward] Completed successfully | watermark_end="${end.toISOString()}"`,
+        )
       } else {
         this.logger.warn(
-          `Forward sync: ${result.failed} ID lỗi, watermark KHÔNG tiến, sẽ retry ở tick sau`,
+          `[Sync:Forward] Sync partially failed | failed_ids_count=${result.failed} action="will retry"`,
         )
       }
     } catch (error: any) {
-      this.logger.error('Forward sync failed', error.stack)
+      this.logger.error(
+        `[Sync:Forward] Sync failed | error="${error.message}"`,
+        error.stack,
+      )
     } finally {
       clearInterval(renewalInterval)
       await this.syncLockService.release()
@@ -127,11 +130,13 @@ export class AuditLogSyncTask {
    */
   @Cron('0 */6 * * *')
   async handleReconciliationSync(): Promise<void> {
-    this.logger.log('Starting reconciliation sync orchestrator...')
+    this.logger.log(
+      '[Sync:Reconciliation] Starting reconciliation sync orchestrator...',
+    )
     const locked = await this.syncLockService.acquire()
     if (!locked) {
       this.logger.warn(
-        'Skipping reconciliation sync: lock held by another instance',
+        '[Sync:Reconciliation] Skipping sync | reason="lock held by another instance"',
       )
       return
     }
@@ -139,7 +144,11 @@ export class AuditLogSyncTask {
     const renewalInterval = setInterval(() => {
       this.syncLockService
         .renewLock()
-        .catch((e) => this.logger.error('Failed to renew lock', e))
+        .catch((e) =>
+          this.logger.error(
+            `[Sync:Lock] Failed to renew lock | error="${e.message}"`,
+          ),
+        )
     }, 60 * 1000)
 
     try {
@@ -154,7 +163,7 @@ export class AuditLogSyncTask {
       )
 
       this.logger.log(
-        `Reconciliation: quét lùi bắt delayed logs [${lookbackStart.toISOString()} → ${safeNow.toISOString()}]`,
+        `[Sync:Reconciliation] Scanning backwards for delayed logs | start="${lookbackStart.toISOString()}" end="${safeNow.toISOString()}"`,
       )
 
       const dayWindows = splitIntoDailyWindows(lookbackStart, safeNow)
@@ -172,10 +181,13 @@ export class AuditLogSyncTask {
       totalFailed = result.failed
 
       this.logger.log(
-        `Reconciliation: hoàn tất, ${totalFailed} ID lỗi (không ảnh hưởng watermark chính)`,
+        `[Sync:Reconciliation] Completed | failed_ids_count=${totalFailed}`,
       )
     } catch (error: any) {
-      this.logger.error('Reconciliation sync failed', error.stack)
+      this.logger.error(
+        `[Sync:Reconciliation] Sync failed | error="${error.message}"`,
+        error.stack,
+      )
     } finally {
       clearInterval(renewalInterval)
       await this.syncLockService.release()

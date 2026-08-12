@@ -1,5 +1,4 @@
 import { EnvironmentVariables } from '@core/config/env.validation'
-import { Logger } from '@core/logger/logger.service'
 import { Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import * as crypto from 'crypto'
@@ -14,18 +13,15 @@ export class EncryptionService {
   private readonly key: Buffer
 
   /**
-   * Initializes the EncryptionService, setting up the logger and generating the encryption key
+   * Initializes the EncryptionService, generating the encryption key
    * from the environment secret using scryptSync.
    *
    * @param {ConfigService<EnvironmentVariables>} configService - The configuration service to retrieve the encryption key secret.
-   * @param {Logger} logger - The logger instance for recording service activities.
    * @returns {void}
    */
   constructor(
     private readonly configService: ConfigService<EnvironmentVariables>,
-    private readonly logger: Logger,
   ) {
-    this.logger.setContext(EncryptionService.name)
     const secret = this.configService.getOrThrow<string>('TOKEN_ENCRYPTION_KEY')
     this.key = crypto.scryptSync(
       secret,

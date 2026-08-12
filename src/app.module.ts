@@ -3,16 +3,15 @@ import { TransformInterceptor } from '@common/interceptors/transform.interceptor
 import { CoreConfigModule } from '@core/config/config.module'
 import { DatabaseModule } from '@core/database/database.module'
 import { HttpClientModule } from '@core/http-client/http-client.module'
-import { LoggerInterceptor } from '@core/logger/logger.interceptor'
 import { LoggerModule } from '@core/logger/logger.module'
 import { AuthModule } from '@modules/auth/auth.module'
 import { EncryptionModule } from '@modules/encryption/encryption.module'
-import { AuditLogSyncModule } from '@modules/sharepoint/audit-log-sync/audit-log-sync.module'
 import { SharepointModule } from '@modules/sharepoint/sharepoint.module'
 import { UsersModule } from '@modules/users/users.module'
 import { Module } from '@nestjs/common'
 import { APP_FILTER, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core'
 import { ScheduleModule } from '@nestjs/schedule'
+import { LoggerErrorInterceptor } from 'nestjs-pino'
 import { ZodValidationPipe } from 'nestjs-zod'
 
 @Module({
@@ -21,7 +20,6 @@ import { ZodValidationPipe } from 'nestjs-zod'
     DatabaseModule,
     HttpClientModule,
     SharepointModule,
-    AuditLogSyncModule,
     UsersModule,
     AuthModule,
     LoggerModule,
@@ -32,7 +30,7 @@ import { ZodValidationPipe } from 'nestjs-zod'
   providers: [
     {
       provide: APP_INTERCEPTOR,
-      useClass: LoggerInterceptor,
+      useClass: LoggerErrorInterceptor,
     },
     {
       provide: APP_INTERCEPTOR,

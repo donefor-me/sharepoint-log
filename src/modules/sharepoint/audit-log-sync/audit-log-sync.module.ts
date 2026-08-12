@@ -23,11 +23,6 @@ import { AuditLogSyncTask } from './tasks/audit-log-sync.task'
     AuditLogRepository,
     AuditLogSyncTask,
   ],
-  exports: [
-    AuditLogQueryService,
-    AuditLogSyncService,
-    SyncLockService,
-    SharepointIntegrationModule,
-  ],
+  exports: [AuditLogQueryService],
 })
 export class AuditLogSyncModule {}

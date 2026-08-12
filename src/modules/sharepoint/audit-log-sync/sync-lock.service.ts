@@ -1,5 +1,4 @@
-import { Logger } from '@core/logger/logger.service'
-import { Injectable, OnModuleInit } from '@nestjs/common'
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common'
 import { DataSource } from 'typeorm'
 
 import { SYNC_CONFIG } from './constants/sync.constant'
@@ -7,6 +6,7 @@ import { AuditLogSyncState } from './entities/audit-log-sync-state.entity'
 
 @Injectable()
 export class SyncLockService implements OnModuleInit {
+  private readonly logger = new Logger(SyncLockService.name)
   /**
    * Initializes the SyncLockService with the TypeORM data source and custom logger.
    *
@@ -14,12 +14,7 @@ export class SyncLockService implements OnModuleInit {
    * @param {Logger} logger - The application logger instance.
    * @returns {void}
    */
-  constructor(
-    private readonly dataSource: DataSource,
-    private readonly logger: Logger,
-  ) {
-    this.logger.setContext(SyncLockService.name)
-  }
+  constructor(private readonly dataSource: DataSource) {}
 
   /**
    * Pre-seeds the database with the initial lock state upon module initialization.
@@ -35,7 +30,7 @@ export class SyncLockService implements OnModuleInit {
       .values({ key: SYNC_CONFIG.LOCK_KEY, lockedUntil: null })
       .orIgnore()
       .execute()
-    this.logger.log('Lock row pre-seeded successfully')
+    this.logger.log('[Sync:Lock] Lock row pre-seeded successfully')
   }
 
   /**
@@ -53,7 +48,7 @@ export class SyncLockService implements OnModuleInit {
       })
 
       if (!row) {
-        this.logger.warn('Lock row missing unexpectedly')
+        this.logger.warn('[Sync:Lock] Lock row missing unexpectedly')
         return false
       }
 

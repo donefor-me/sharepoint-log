@@ -1,4 +1,4 @@
-import { Logger } from '@core/logger/logger.service'
+import { Logger } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
 import { getRepositoryToken } from '@nestjs/typeorm'
 import { randomUUID } from 'crypto'
@@ -47,7 +47,7 @@ describe('AuditLogSync Workflow (e2e)', () => {
   }
 
   const createMockActivity = (
-    uri: string,
+    _uri: string,
     operation = 'MockOp',
     date = new Date(),
   ) => ({

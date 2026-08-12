@@ -1,6 +1,5 @@
 import { EnvironmentVariables } from '@core/config/env.validation'
-import { Logger } from '@core/logger/logger.service'
-import { Injectable } from '@nestjs/common'
+import { Injectable, Logger } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { InjectRepository } from '@nestjs/typeorm'
 import * as bcrypt from 'bcrypt'
@@ -23,7 +22,7 @@ export class DatabaseSeederService {
       where: { username: 'admin' },
     })
     if (!adminExists) {
-      this.logger.log('Admin user not found. Seeding initial admin user...')
+      this.logger.log('[Seeder:Admin] Admin user not found, starting seed...')
 
       const adminPassword =
         this.configService.get('ADMIN_DEFAULT_PASSWORD', { infer: true }) ||
@@ -36,9 +35,9 @@ export class DatabaseSeederService {
       })
 
       await this.userRepository.save(admin)
-      this.logger.log('Admin user successfully seeded.')
+      this.logger.log('[Seeder:Admin] Admin user seeded successfully')
     } else {
-      this.logger.log('Admin user already exists.')
+      this.logger.log('[Seeder:Admin] Admin user already exists, skipping...')
     }
   }
 }

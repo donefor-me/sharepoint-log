@@ -1,7 +1,6 @@
 import { chunkArray } from '@common/utils/array.util'
 import { withRetry } from '@common/utils/http-retry.util'
-import { Logger } from '@core/logger/logger.service'
-import { Injectable } from '@nestjs/common'
+import { Injectable, Logger } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { DataSource, In, Repository } from 'typeorm'
 
@@ -15,6 +14,7 @@ import { AuditLogDlq } from './entities/audit-log-dlq.entity'
 
 @Injectable()
 export class AuditLogSyncService {
+  private readonly logger = new Logger(AuditLogSyncService.name)
   /**
    * Initializes the AuditLogSyncService and sets up the logger context.
    *
@@ -29,10 +29,7 @@ export class AuditLogSyncService {
     private readonly dataSource: DataSource,
     @InjectRepository(AuditLogDlq)
     private readonly dlqRepo: Repository<AuditLogDlq>,
-    private readonly logger: Logger,
-  ) {
-    this.logger.setContext(AuditLogSyncService.name)
-  }
+  ) {}
 
   /**
    * Accepts a batch of files and inserts them into the DLQ as PENDING (ignoring duplicates).
@@ -87,7 +84,7 @@ export class AuditLogSyncService {
       }
 
       this.logger.log(
-        `Processing batch of ${pendingLogs.length} pending logs...`,
+        `[Sync:DLQ] Processing batch of pending logs | count=${pendingLogs.length}`,
       )
 
       for (const batch of chunkArray(

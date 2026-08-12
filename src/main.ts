@@ -1,7 +1,9 @@
 import { EnvironmentVariables } from '@core/config/env.validation'
-import { Logger } from '@core/logger/logger.service'
+import { Logger as NestLogger } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { NestFactory } from '@nestjs/core'
+import helmet from 'helmet'
+import { Logger } from 'nestjs-pino'
 
 import { AppModule } from './app.module'
 
@@ -10,9 +12,10 @@ async function bootstrap() {
     bufferLogs: true,
   })
 
-  const logger = await app.resolve(Logger)
-  app.useLogger(logger)
-  logger.setContext('Bootstrap')
+  app.useLogger(app.get(Logger))
+  const logger = new NestLogger('Bootstrap')
+
+  app.use(helmet())
 
   const configService =
     app.get<ConfigService<EnvironmentVariables>>(ConfigService)
