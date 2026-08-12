@@ -13,6 +13,7 @@ export interface AuditLogQueryOptions {
   page?: number
   limit?: number
 }
+import { SYNC_CONFIG } from './constants/sync.constant'
 import { AuditLog } from './entities/audit-log.entity'
 import { AuditLogSyncState } from './entities/audit-log-sync-state.entity'
 
@@ -91,7 +92,7 @@ export class AuditLogQueryService {
 
   async getSyncWatermark(): Promise<Date | null> {
     const watermark = await this.auditLogSyncStateRepository.findOne({
-      where: { key: 'sharepoint_watermark' },
+      where: { key: SYNC_CONFIG.STATE_WATERMARK_KEY },
     })
     return watermark?.value || null
   }
