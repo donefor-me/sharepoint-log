@@ -1,9 +1,11 @@
+import { runPool } from '@common/utils/array.util'
 import { splitIntoDailyWindows } from '@common/utils/date.util'
 import { Injectable, Logger } from '@nestjs/common'
 import { Cron } from '@nestjs/schedule'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 
+import { SharepointContentDto } from '../../integration/dto/sharepoint-management.dto'
 import { SharepointService } from '../../integration/sharepoint.service'
 import { AuditLogSyncService } from '../audit-log-sync.service'
 import { SYNC_CONFIG } from '../constants/sync.constant'
@@ -169,12 +171,25 @@ export class AuditLogSyncTask {
       const dayWindows = splitIntoDailyWindows(lookbackStart, safeNow)
 
       let totalFailed = 0
-      for (const w of dayWindows) {
-        const files = await this.sharepointService.fetchAllLogs({
-          startTime: w.start.toISOString(),
-          endTime: w.end.toISOString(),
-        })
-        await this.syncService.insertToDlq(files)
+      const fetchTasks = dayWindows.map(
+        (w) => () =>
+          this.sharepointService.fetchAllLogs({
+            startTime: w.start.toISOString(),
+            endTime: w.end.toISOString(),
+          }),
+      )
+      const fetchResults = await runPool(
+        fetchTasks,
+        SYNC_CONFIG.RECONCILIATION_FETCH_CONCURRENCY,
+      )
+      const allFiles = fetchResults
+        .filter(
+          (r): r is PromiseFulfilledResult<SharepointContentDto[]> =>
+            r.status === 'fulfilled',
+        )
+        .flatMap((r) => r.value)
+      if (allFiles.length > 0) {
+        await this.syncService.insertToDlq(allFiles)
       }
 
       const result = await this.syncService.processPendingLogs()

@@ -1,4 +1,4 @@
-import { chunkArray } from '@common/utils/array.util'
+import { chunkArray, runPool } from '@common/utils/array.util'
 import { withRetry } from '@common/utils/http-retry.util'
 import { Injectable, Logger } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
@@ -86,47 +86,45 @@ export class AuditLogSyncService {
         `[Sync:DLQ] Processing batch of pending logs | count=${pendingLogs.length}`,
       )
 
-      for (const batch of chunkArray(
-        pendingLogs,
-        SYNC_CONFIG.CONCURRENT_DOWNLOADS,
-      )) {
-        const doneLogUris: string[] = []
-        const failedLogs: AuditLogDlq[] = []
+      const doneLogUris: string[] = []
+      const failedLogs: AuditLogDlq[] = []
 
-        await Promise.allSettled(
-          batch.map(async (log) => {
-            try {
-              await withRetry(() =>
-                this.processSingleFile(log.contentUri, log.contentId),
-              )
-              doneLogUris.push(log.contentUri)
-            } catch (error: any) {
-              log.retryCount += 1
-              log.errorReason = error.message
-              if (log.retryCount >= SYNC_CONFIG.MAX_RETRY_PER_ID) {
-                log.status = AuditLogDlqStatus.DLQ
-              }
-              failedLogs.push(log)
-            }
-          }),
+      const tasks = pendingLogs.map((log) => async () => {
+        await withRetry(() =>
+          this.processSingleFile(log.contentUri, log.contentId),
         )
+        return log.contentUri
+      })
 
-        if (doneLogUris.length > 0) {
-          await this.dlqRepo.update(
-            { contentUri: In(doneLogUris) },
-            {
-              status: AuditLogDlqStatus.DONE,
-            },
-          )
-        }
+      const settled = await runPool(tasks, SYNC_CONFIG.CONCURRENT_DOWNLOADS)
 
-        if (failedLogs.length > 0) {
-          await this.dlqRepo.save(failedLogs)
-          totalFailed += failedLogs.length
-          skipRecords += failedLogs.filter(
-            (log) => log.status === AuditLogDlqStatus.PENDING,
-          ).length
+      for (let i = 0; i < settled.length; i++) {
+        const result = settled[i]
+        const log = pendingLogs[i]
+        if (result.status === 'fulfilled') {
+          doneLogUris.push(result.value)
+        } else {
+          log.retryCount += 1
+          log.errorReason = (result.reason as Error).message
+          if (log.retryCount >= SYNC_CONFIG.MAX_RETRY_PER_ID) {
+            log.status = AuditLogDlqStatus.DLQ
+          }
+          failedLogs.push(log)
         }
+      }
+      if (doneLogUris.length > 0) {
+        await this.dlqRepo.update(
+          { contentUri: In(doneLogUris) },
+          { status: AuditLogDlqStatus.DONE },
+        )
+      }
+
+      if (failedLogs.length > 0) {
+        await this.dlqRepo.save(failedLogs)
+        totalFailed += failedLogs.length
+        skipRecords += failedLogs.filter(
+          (log) => log.status === AuditLogDlqStatus.PENDING,
+        ).length
       }
     }
 
