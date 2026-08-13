@@ -19,6 +19,9 @@ export const envSchema = z
       .min(16, 'Must be at least 16 characters')
       .max(128, 'Max 128 characters'),
     JWT_SECRET: z.string().min(8),
+    JWT_EXPIRES_IN: z.string().default('15m'),
+    JWT_REFRESH_SECRET: z.string().min(8),
+    JWT_REFRESH_EXPIRES_IN: z.string().default('7d'),
     CORS_ORIGIN: z.string().transform((v) => v.split(',').map((s) => s.trim())),
     ADMIN_DEFAULT_PASSWORD: z.string().optional(),
   })

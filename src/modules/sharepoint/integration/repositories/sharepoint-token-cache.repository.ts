@@ -15,9 +15,8 @@ export class SharepointTokenCacheRepository {
   /**
    * Initializes the SharepointTokenCacheRepository.
    *
-   * @param {Repository<SharepointTokenCache>} repository - The TypeORM repository for managing token cache entries in the database.
-   * @param {EncryptionService} encryptionService - Service used to encrypt and decrypt the token before storing or after retrieving.
-   * @returns {void}
+   * @param {Repository<SharepointTokenCache>} repository - The TypeORM repository for the token cache entity.
+   * @param {EncryptionService} encryptionService - Service used for encrypting and decrypting tokens.
    */
   constructor(
     @InjectRepository(SharepointTokenCache)

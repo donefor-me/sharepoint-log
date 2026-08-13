@@ -13,14 +13,14 @@ import { SyncLockService } from '../sync-lock.service'
 @Injectable()
 export class AuditLogSyncTask {
   private readonly logger = new Logger(AuditLogSyncTask.name)
+
   /**
-   * Initializes the AuditLogSyncTask and sets up the logger context.
+   * Initializes the AuditLogSyncTask.
    *
-   * @param {Repository<AuditLogSyncState>} syncStateRepo - Repository for synchronization state.
-   * @param {SyncLockService} syncLockService - Service for distributed locking.
-   * @param {SharepointService} sharepointService - Service to interact with SharePoint API.
-   * @param {AuditLogSyncService} syncService - Service to process fetched audit logs.
-   * @returns {void}
+   * @param {Repository<AuditLogSyncState>} syncStateRepo - Repository to track the sync watermark state.
+   * @param {SyncLockService} syncLockService - Service for managing distributed concurrency locks.
+   * @param {SharepointService} sharepointService - Service for fetching raw audit logs from SharePoint.
+   * @param {AuditLogSyncService} syncService - Service for processing and saving audit logs.
    */
   constructor(
     @InjectRepository(AuditLogSyncState)

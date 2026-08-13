@@ -15,14 +15,13 @@ import { AuditLogDlq } from './entities/audit-log-dlq.entity'
 @Injectable()
 export class AuditLogSyncService {
   private readonly logger = new Logger(AuditLogSyncService.name)
+
   /**
-   * Initializes the AuditLogSyncService and sets up the logger context.
+   * Initializes the AuditLogSyncService.
    *
-   * @param {SharepointService} sharepointService - The SharePoint service to fetch logs.
-   * @param {DataSource} dataSource - The TypeORM data source for managing transactions.
-   * @param {Repository<AuditLogDlq>} dlqRepo - The repository for the dead letter queue (pending/DLQ logs).
-   * @param {Logger} logger - The logger instance.
-   * @returns {void}
+   * @param {SharepointService} sharepointService - The service handling SharePoint API interactions.
+   * @param {DataSource} dataSource - The TypeORM DataSource instance for managing transactions.
+   * @param {Repository<AuditLogDlq>} dlqRepo - The repository for managing dead-letter queue records.
    */
   constructor(
     private readonly sharepointService: SharepointService,

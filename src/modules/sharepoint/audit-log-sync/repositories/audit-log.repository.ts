@@ -9,8 +9,7 @@ export class AuditLogRepository {
   /**
    * Initializes the AuditLogRepository.
    *
-   * @param {Repository<AuditLog>} repository - The underlying TypeORM repository for the AuditLog entity.
-   * @returns {void}
+   * @param {Repository<AuditLog>} repository - The TypeORM repository for the AuditLog entity.
    */
   constructor(
     @InjectRepository(AuditLog)

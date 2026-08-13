@@ -13,11 +13,9 @@ export class EncryptionService {
   private readonly key: Buffer
 
   /**
-   * Initializes the EncryptionService, generating the encryption key
-   * from the environment secret using scryptSync.
+   * Initializes the EncryptionService by deriving a secure key using scrypt from the configured secret.
    *
-   * @param {ConfigService<EnvironmentVariables>} configService - The configuration service to retrieve the encryption key secret.
-   * @returns {void}
+   * @param {ConfigService<EnvironmentVariables>} configService - Configuration service to access env variables.
    */
   constructor(
     private readonly configService: ConfigService<EnvironmentVariables>,

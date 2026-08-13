@@ -9,4 +9,7 @@ export class User extends AbstractEntity {
 
   @Column()
   password?: string
+
+  @Column({ nullable: true })
+  refreshToken?: string
 }

@@ -22,13 +22,11 @@ export class SharepointService {
   private readonly logger = new Logger(SharepointService.name)
 
   /**
-   * Initializes the SharepointService, sets up logging context, and retrieves the tenantId from config.
+   * Initializes the SharepointService.
    *
-   * @param {HttpClientService} httpClient - The HTTP client used for external API requests.
-   * @param {ConfigService} configService - The application configuration service.
-   * @param {Logger} logger - The logger instance.
-   * @param {SharepointTokenCacheRepository} tokenCacheRepository - Repository to retrieve and store the authentication token.
-   * @returns {void}
+   * @param {HttpClientService} httpClient - Abstracted HTTP client for making external requests.
+   * @param {ConfigService<EnvironmentVariables>} configService - Typed configuration service for environment variables.
+   * @param {SharepointTokenCacheRepository} tokenCacheRepository - Repository for caching the access token.
    */
   constructor(
     private readonly httpClient: HttpClientService,

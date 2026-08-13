@@ -14,10 +14,9 @@ import { SharepointService } from './sharepoint.service'
 @Controller('api/sharepoint')
 export class SharepointController {
   /**
-   * Initializes the SharepointController with the required SharepointService.
+   * Initializes the SharepointController.
    *
-   * @param {SharepointService} sharepointService - The service handling SharePoint business logic and external API calls.
-   * @returns {void}
+   * @param {SharepointService} sharepointService - The injected SharePoint service.
    */
   constructor(private readonly sharepointService: SharepointService) {}
 
