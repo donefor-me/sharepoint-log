@@ -66,10 +66,9 @@ export class AuditLogSyncService {
    */
   async processPendingLogs(): Promise<{ failed: number }> {
     let totalFailed = 0
-    let hasMore = true
     let skipRecords = 0
 
-    while (hasMore) {
+    while (true) {
       const pendingLogs = await this.dlqRepo.find({
         where: { status: AuditLogDlqStatus.PENDING },
         order: { retryCount: 'ASC', createdAt: 'ASC' },
@@ -78,7 +77,6 @@ export class AuditLogSyncService {
       })
 
       if (pendingLogs.length === 0) {
-        hasMore = false
         break
       }
 

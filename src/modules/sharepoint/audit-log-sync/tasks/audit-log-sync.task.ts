@@ -183,10 +183,16 @@ export class AuditLogSyncTask {
         SYNC_CONFIG.RECONCILIATION_FETCH_CONCURRENCY,
       )
       const allFiles = fetchResults
-        .filter(
-          (r): r is PromiseFulfilledResult<SharepointContentDto[]> =>
-            r.status === 'fulfilled',
-        )
+        .filter((r, i): r is PromiseFulfilledResult<SharepointContentDto[]> => {
+          if (r.status === 'fulfilled') return true
+          this.logger.warn(
+            `[Sync:Reconciliation] Failed to fetch logs for window | 
+            start="${dayWindows[i].start.toISOString()}" | 
+            end="${dayWindows[i].end.toISOString()}" | 
+            error="${(r.reason as Error).message}"`,
+          )
+          return false
+        })
         .flatMap((r) => r.value)
       if (allFiles.length > 0) {
         await this.syncService.insertToDlq(allFiles)
