@@ -16,13 +16,6 @@ import { AuditLogDlq } from './entities/audit-log-dlq.entity'
 export class AuditLogSyncService {
   private readonly logger = new Logger(AuditLogSyncService.name)
 
-  /**
-   * Initializes the AuditLogSyncService.
-   *
-   * @param {SharepointService} sharepointService - The service handling SharePoint API interactions.
-   * @param {DataSource} dataSource - The TypeORM DataSource instance for managing transactions.
-   * @param {Repository<AuditLogDlq>} dlqRepo - The repository for managing dead-letter queue records.
-   */
   constructor(
     private readonly sharepointService: SharepointService,
     private readonly dataSource: DataSource,
@@ -129,15 +122,6 @@ export class AuditLogSyncService {
     return { failed: totalFailed }
   }
 
-  /**
-   * Fetches raw logs from the SharePoint API for a specific content URI and saves them in batches.
-   * Uses a database transaction to ensure atomicity and `orIgnore()` to prevent duplicate entries.
-   *
-   * @param {string} contentUri - The URI of the content blob to fetch.
-   * @param {string} contentId - The unique identifier for the content blob.
-   * @returns {Promise<void>} - A promise that resolves when the file is processed.
-   * @throws {Error} - Thrown if fetching or saving the data fails.
-   */
   private async processSingleFile(
     contentUri: string,
     contentId: string,

@@ -21,13 +21,6 @@ export class SharepointService {
   private readonly ALLOWED_API_PREFIX = 'https://manage.office.com/api/v1.0/'
   private readonly logger = new Logger(SharepointService.name)
 
-  /**
-   * Initializes the SharepointService.
-   *
-   * @param {HttpClientService} httpClient - Abstracted HTTP client for making external requests.
-   * @param {ConfigService<EnvironmentVariables>} configService - Typed configuration service for environment variables.
-   * @param {SharepointTokenCacheRepository} tokenCacheRepository - Repository for caching the access token.
-   */
   constructor(
     private readonly httpClient: HttpClientService,
     private readonly configService: ConfigService<EnvironmentVariables>,
@@ -36,13 +29,6 @@ export class SharepointService {
     this.tenantId = this.configService.get('O365_TENANT_ID', { infer: true })!
   }
 
-  /**
-   * Retrieves a valid access token for the SharePoint API. It first checks the cache.
-   * If a valid token is not found, it requests a new one using client credentials flow and caches it.
-   *
-   * @returns {Promise<string>} - A promise that resolves with the access token string.
-   * @throws {SharepointApiException} - Thrown if configuration is missing or authentication fails.
-   */
   private async getToken(): Promise<string> {
     const cachedToken = await this.tokenCacheRepository.getValidToken()
     if (cachedToken) return cachedToken
@@ -80,14 +66,6 @@ export class SharepointService {
     }
   }
 
-  /**
-   * Builds the fully qualified URL for Office 365 Management API calls.
-   * Automatically appends the PublisherIdentifier to the query parameters.
-   *
-   * @param {string} path - The specific API path to append to the base URL.
-   * @param {Record<string, string>} [queryParams={}] - Optional query parameters to include in the URL.
-   * @returns {string} - The constructed API URL.
-   */
   private buildApiUrl(
     path: string,
     queryParams: Record<string, string> = {},
@@ -100,16 +78,6 @@ export class SharepointService {
     return `${base}?${params.toString()}`
   }
 
-  /**
-   * Wrapper function to execute HTTP requests with automatic token injection.
-   * Retrieves a token, attaches it as a Bearer authorization header, and performs the request.
-   *
-   * @param {'get' | 'post'} method - The HTTP method to use.
-   * @param {string} url - The URL to send the request to.
-   * @param {unknown} [body] - The request payload body (used for POST requests).
-   * @returns {Promise<T>} - A promise that resolves with the strongly typed response data.
-   * @throws {SharepointApiException} - Thrown if the HTTP request fails.
-   */
   private async authenticatedRequest<T>(
     method: 'get' | 'post',
     url: string,

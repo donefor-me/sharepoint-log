@@ -6,11 +6,6 @@ import { AuditLog } from '../entities/audit-log.entity'
 
 @Injectable()
 export class AuditLogRepository {
-  /**
-   * Initializes the AuditLogRepository.
-   *
-   * @param {Repository<AuditLog>} repository - The TypeORM repository for the AuditLog entity.
-   */
   constructor(
     @InjectRepository(AuditLog)
     private readonly repository: Repository<AuditLog>,

@@ -8,11 +8,6 @@ import { AuditLogSyncState } from './entities/audit-log-sync-state.entity'
 export class SyncLockService implements OnModuleInit {
   private readonly logger = new Logger(SyncLockService.name)
 
-  /**
-   * Initializes the SyncLockService.
-   *
-   * @param {DataSource} dataSource - The TypeORM DataSource instance for interacting with the database.
-   */
   constructor(private readonly dataSource: DataSource) {}
 
   /**

@@ -77,15 +77,6 @@ export class HttpClientService {
     return this.request<T>('DELETE', url, undefined, config)
   }
 
-  /**
-   * A generic method to send HTTP requests using the configured HttpService.
-   *
-   * @param {string} method - The HTTP method (e.g., 'GET', 'POST').
-   * @param {string} url - The URL to send the request to.
-   * @param {any} [data] - The request payload.
-   * @param {AxiosRequestConfig} [config] - Additional Axios request configuration.
-   * @returns {Promise<T>} A promise that resolves to the response data.
-   */
   private async request<T>(
     method: string,
     url: string,

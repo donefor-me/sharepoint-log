@@ -12,11 +12,6 @@ export class EncryptionService {
     ENCRYPTION_CONFIG.IV_LENGTH + ENCRYPTION_CONFIG.AUTH_TAG_LENGTH
   private readonly key: Buffer
 
-  /**
-   * Initializes the EncryptionService by deriving a secure key using scrypt from the configured secret.
-   *
-   * @param {ConfigService<EnvironmentVariables>} configService - Configuration service to access env variables.
-   */
   constructor(
     private readonly configService: ConfigService<EnvironmentVariables>,
   ) {

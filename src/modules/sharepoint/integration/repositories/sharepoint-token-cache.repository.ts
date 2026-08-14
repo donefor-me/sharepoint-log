@@ -12,12 +12,6 @@ const SECONDS_TO_MS_MULTIPLIER = 1000
 
 @Injectable()
 export class SharepointTokenCacheRepository {
-  /**
-   * Initializes the SharepointTokenCacheRepository.
-   *
-   * @param {Repository<SharepointTokenCache>} repository - The TypeORM repository for the token cache entity.
-   * @param {EncryptionService} encryptionService - Service used for encrypting and decrypting tokens.
-   */
   constructor(
     @InjectRepository(SharepointTokenCache)
     private readonly repository: Repository<SharepointTokenCache>,
