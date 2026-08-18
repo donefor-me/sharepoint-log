@@ -13,9 +13,11 @@ export class EncryptionService {
   private readonly key: Buffer
 
   constructor(
-    private readonly configService: ConfigService<EnvironmentVariables>,
+    private readonly configService: ConfigService<EnvironmentVariables, true>,
   ) {
-    const secret = this.configService.getOrThrow<string>('TOKEN_ENCRYPTION_KEY')
+    const secret = this.configService.get('TOKEN_ENCRYPTION_KEY', {
+      infer: true,
+    })
     this.key = crypto.scryptSync(
       secret,
       ENCRYPTION_CONFIG.KDF_SALT,

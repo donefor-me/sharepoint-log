@@ -12,9 +12,13 @@ import { AuthService } from './auth.service'
     UsersModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
-      useFactory: (configService: ConfigService<EnvironmentVariables>) => ({
-        secret: configService.get('JWT_SECRET', { infer: true })!,
-        signOptions: { expiresIn: '1d' }, // TODO: ADD TO .ENV
+      useFactory: (
+        configService: ConfigService<EnvironmentVariables, true>,
+      ) => ({
+        secret: configService.get('JWT_SECRET', { infer: true }),
+        signOptions: {
+          expiresIn: configService.get('JWT_EXPIRES_IN', { infer: true }),
+        },
       }),
       inject: [ConfigService],
     }),

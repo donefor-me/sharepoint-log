@@ -10,7 +10,9 @@ import { SeederModule } from './seeder/seeder.module'
   imports: [
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
-      useFactory: (configService: ConfigService<EnvironmentVariables>) => ({
+      useFactory: (
+        configService: ConfigService<EnvironmentVariables, true>,
+      ) => ({
         type: 'postgres',
         host: configService.get('DB_HOST', { infer: true }),
         port: configService.get('DB_PORT', { infer: true }),

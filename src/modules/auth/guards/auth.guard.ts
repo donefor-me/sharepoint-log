@@ -12,8 +12,8 @@ import { Request } from 'express'
 @Injectable()
 export class AuthGuard implements CanActivate {
   constructor(
-    private jwtService: JwtService,
-    private configService: ConfigService<EnvironmentVariables>,
+    private readonly jwtService: JwtService,
+    private readonly configService: ConfigService<EnvironmentVariables, true>,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -24,7 +24,7 @@ export class AuthGuard implements CanActivate {
     }
     try {
       const payload = await this.jwtService.verifyAsync(token, {
-        secret: this.configService.get('JWT_SECRET', { infer: true })!,
+        secret: this.configService.get('JWT_SECRET', { infer: true }),
       })
       request['user'] = payload
     } catch {

@@ -23,20 +23,20 @@ export class SharepointService {
 
   constructor(
     private readonly httpClient: HttpClientService,
-    private readonly configService: ConfigService<EnvironmentVariables>,
+    private readonly configService: ConfigService<EnvironmentVariables, true>,
     private readonly tokenCacheRepository: SharepointTokenCacheRepository,
   ) {
-    this.tenantId = this.configService.get('O365_TENANT_ID', { infer: true })!
+    this.tenantId = this.configService.get('O365_TENANT_ID', { infer: true })
   }
 
   private async getToken(): Promise<string> {
     const cachedToken = await this.tokenCacheRepository.getValidToken()
     if (cachedToken) return cachedToken
 
-    const clientId = this.configService.get('O365_CLIENT_ID', { infer: true })!
+    const clientId = this.configService.get('O365_CLIENT_ID', { infer: true })
     const clientSecret = this.configService.get('O365_CLIENT_SECRET', {
       infer: true,
-    })!
+    })
 
     if (!clientId || !clientSecret) {
       throw new SharepointApiException('Missing SharePoint API configuration')
