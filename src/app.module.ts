@@ -4,10 +4,8 @@ import { CoreConfigModule } from '@core/config/config.module'
 import { DatabaseModule } from '@core/database/database.module'
 import { HttpClientModule } from '@core/http-client/http-client.module'
 import { LoggerModule } from '@core/logger/logger.module'
-import { AuthModule } from '@modules/auth/auth.module'
 import { EncryptionModule } from '@modules/encryption/encryption.module'
 import { SharepointModule } from '@modules/sharepoint/sharepoint.module'
-import { UsersModule } from '@modules/users/users.module'
 import { Module } from '@nestjs/common'
 import { APP_FILTER, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core'
 import { ScheduleModule } from '@nestjs/schedule'
@@ -20,8 +18,6 @@ import { ZodValidationPipe } from 'nestjs-zod'
     DatabaseModule,
     HttpClientModule,
     SharepointModule,
-    UsersModule,
-    AuthModule,
     LoggerModule,
     EncryptionModule,
     ScheduleModule.forRoot(),

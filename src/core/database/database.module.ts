@@ -4,7 +4,6 @@ import { TypeOrmModule } from '@nestjs/typeorm'
 import { SnakeNamingStrategy } from 'typeorm-naming-strategies'
 
 import { EnvironmentVariables } from '../config/env.validation'
-import { SeederModule } from './seeder/seeder.module'
 
 @Module({
   imports: [
@@ -24,7 +23,6 @@ import { SeederModule } from './seeder/seeder.module'
         synchronize: false,
       }),
     }),
-    SeederModule,
   ],
 })
 export class DatabaseModule {}

@@ -6,7 +6,6 @@ import { AuditLog } from './src/modules/sharepoint/audit-log-sync/entities/audit
 import { AuditLogDlq } from './src/modules/sharepoint/audit-log-sync/entities/audit-log-dlq.entity'
 import { AuditLogSyncState } from './src/modules/sharepoint/audit-log-sync/entities/audit-log-sync-state.entity'
 import { SharepointTokenCache } from './src/modules/sharepoint/integration/entities/sharepoint-token-cache.entity'
-import { User } from './src/modules/users/entities/user.entity'
 
 config()
 
@@ -17,13 +16,7 @@ export default new DataSource({
   username: process.env.DB_USER || 'postgres',
   password: process.env.DB_PASS || 'postgres',
   database: process.env.DB_NAME || 'sharepoint_logs',
-  entities: [
-    AuditLog,
-    SharepointTokenCache,
-    AuditLogSyncState,
-    User,
-    AuditLogDlq,
-  ],
+  entities: [AuditLog, SharepointTokenCache, AuditLogSyncState, AuditLogDlq],
   migrations: ['src/core/database/migrations/*.ts'],
   namingStrategy: new SnakeNamingStrategy(),
   synchronize: false,
