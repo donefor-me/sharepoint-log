@@ -7,10 +7,13 @@ import {
   Post,
   Query,
 } from '@nestjs/common'
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger'
 
 import { TimeWindowDto } from './dto/time-window.dto'
 import { SharepointService } from './sharepoint.service'
 
+@ApiTags('SharePoint Integration')
+@ApiBearerAuth()
 @Controller('api/sharepoint')
 export class SharepointController {
   constructor(private readonly sharepointService: SharepointService) {}

@@ -1,5 +1,5 @@
 import { EnvironmentVariables } from '@core/config/env.validation'
-import { Logger as NestLogger } from '@nestjs/common'
+import { setupSwagger } from '@core/swagger/swagger.setup'
 import { ConfigService } from '@nestjs/config'
 import { NestFactory } from '@nestjs/core'
 import helmet from 'helmet'
@@ -12,23 +12,38 @@ async function bootstrap() {
     bufferLogs: true,
   })
 
-  app.useLogger(app.get(Logger))
-  const logger = new NestLogger('Bootstrap')
-
-  app.use(helmet())
-
   const configService =
-    app.get<ConfigService<EnvironmentVariables>>(ConfigService)
+    app.get<ConfigService<EnvironmentVariables, true>>(ConfigService)
+
+  const logger = app.get(Logger)
+  app.useLogger(logger)
+
+  setupSwagger(app, configService)
+
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          scriptSrc: ["'self'", "'unsafe-inline'", '://cloudflare.com'],
+          styleSrc: ["'self'", "'unsafe-inline'", '://cloudflare.com'],
+          imgSrc: ["'self'", 'data:', 'validator.swagger.io'],
+          connectSrc: ["'self'", 'validator.swagger.io'],
+        },
+      },
+    }),
+  )
 
   app.enableCors({
-    origin: configService.getOrThrow('CORS_ORIGIN'),
+    origin: configService.get('CORS_ORIGIN', { infer: true }),
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
   })
 
-  const port = configService.getOrThrow('PORT')
+  const port = configService.get('PORT', { infer: true })
   await app.listen(port)
 
-  logger.log(`Application is running on: ${await app.getUrl()}`)
+  logger.log(`Swagger available at: ${await app.getUrl()}/api/docs`)
+  logger.log(`Application is running at: ${await app.getUrl()}`)
 }
 bootstrap().catch((err) => console.error(err))

@@ -1,10 +1,20 @@
 import { z } from 'zod'
 
+const stringToBoolean = z.preprocess((val) => {
+  if (typeof val === 'string') {
+    const lower = val.trim().toLowerCase()
+    if (lower === 'true' || lower === '1') return true
+    if (lower === 'false' || lower === '0') return false
+  }
+  return val
+}, z.boolean())
+
 export const envSchema = z
   .object({
     NODE_ENV: z
       .enum(['development', 'production', 'test'])
       .default('development'),
+    ENABLE_SWAGGER: stringToBoolean.default(false),
     PORT: z.coerce.number(),
     DB_HOST: z.string(),
     DB_PORT: z.coerce.number(),

@@ -1,5 +1,6 @@
 import { ResponseMessage } from '@common/decorators/response-message.decorator'
 import { Controller, Get, HttpCode, HttpStatus, Query } from '@nestjs/common'
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger'
 
 import type { AuditLog } from '../audit-log-sync/entities/audit-log.entity'
 import { GetAuditLogsDto } from './dto/get-audit-logs.dto'
@@ -9,7 +10,9 @@ import { SharepointDashboardService } from './sharepoint-dashboard.service'
  * Controller for providing data to the SharePoint sync dashboard.
  * Endpoints are used by the frontend to display audit logs and sync status.
  */
-@Controller('api/dashboard')
+@ApiTags('Shapoint Dashboard')
+@ApiBearerAuth()
+@Controller('api/sharepoint-dashboard')
 export class SharepointDashboardController {
   constructor(private readonly dashboardService: SharepointDashboardService) {}
 
