@@ -59,9 +59,6 @@ export class SharepointService {
       await this.tokenCacheRepository.saveToken(data)
       return data.access_token
     } catch (error: any) {
-      this.logger.error(
-        `[SharepointAPI:Auth] Authentication request failed | error="${error.message}"`,
-      )
       throw new SharepointApiException(error.message)
     }
   }

@@ -32,11 +32,18 @@ export class AuditLogSyncTask {
    */
   @Cron('*/30 * * * *')
   async handleForwardSync(): Promise<void> {
-    this.logger.log('[Sync:Forward] Starting forward sync orchestrator...')
+    this.logger.log(
+      { action: 'forward_sync_start' },
+      '[Sync:Forward] Starting forward sync orchestrator...',
+    )
     const locked = await this.syncLockService.acquire()
     if (!locked) {
       this.logger.warn(
-        '[Sync:Forward] Skipping sync | reason="lock held by another instance"',
+        {
+          action: 'forward_sync_skip',
+          reason: 'lock held by another instance',
+        },
+        '[Sync:Forward] Skipping sync',
       )
       return
     }
@@ -46,7 +53,8 @@ export class AuditLogSyncTask {
         .renewLock()
         .catch((e) =>
           this.logger.error(
-            `[Sync:Lock] Failed to renew lock | error="${e.message}"`,
+            { action: 'renew_lock_failed', error: e.message },
+            '[Sync:Lock] Failed to renew lock',
           ),
         )
     }, 60 * 1000)
@@ -69,6 +77,7 @@ export class AuditLogSyncTask {
 
       if (targetWatermarkMs <= watermarkMs) {
         this.logger.log(
+          { action: 'forward_sync_caught_up' },
           '[Sync:Forward] Caught up to safe window, nothing to fetch',
         )
         return
@@ -78,7 +87,12 @@ export class AuditLogSyncTask {
       const end = new Date(targetWatermarkMs)
 
       this.logger.log(
-        `[Sync:Forward] Fetching audit logs | start="${start.toISOString()}" end="${end.toISOString()}"`,
+        {
+          action: 'forward_sync_fetching',
+          start: start.toISOString(),
+          end: end.toISOString(),
+        },
+        '[Sync:Forward] Fetching audit logs',
       )
 
       const files = await this.sharepointService.fetchAllLogs({
@@ -98,17 +112,26 @@ export class AuditLogSyncTask {
         state.value = end
         await this.syncStateRepo.save(state)
         this.logger.log(
-          `[Sync:Forward] Completed successfully | watermark_end="${end.toISOString()}"`,
+          { action: 'forward_sync_success', watermarkEnd: end.toISOString() },
+          '[Sync:Forward] Completed successfully',
         )
       } else {
         this.logger.warn(
-          `[Sync:Forward] Sync partially failed | failed_ids_count=${result.failed} action="will retry"`,
+          {
+            action: 'forward_sync_partial_failure',
+            failedIdsCount: result.failed,
+          },
+          '[Sync:Forward] Sync partially failed, will retry',
         )
       }
     } catch (error: any) {
       this.logger.error(
-        `[Sync:Forward] Sync failed | error="${error.message}"`,
-        error.stack,
+        {
+          action: 'forward_sync_failed',
+          error: error.message,
+          stack: error.stack,
+        },
+        '[Sync:Forward] Sync failed',
       )
     } finally {
       clearInterval(renewalInterval)
@@ -125,12 +148,17 @@ export class AuditLogSyncTask {
   @Cron('0 */6 * * *')
   async handleReconciliationSync(): Promise<void> {
     this.logger.log(
+      { action: 'reconciliation_sync_start' },
       '[Sync:Reconciliation] Starting reconciliation sync orchestrator...',
     )
     const locked = await this.syncLockService.acquire()
     if (!locked) {
       this.logger.warn(
-        '[Sync:Reconciliation] Skipping sync | reason="lock held by another instance"',
+        {
+          action: 'reconciliation_sync_skip',
+          reason: 'lock held by another instance',
+        },
+        '[Sync:Reconciliation] Skipping sync',
       )
       return
     }
@@ -140,7 +168,8 @@ export class AuditLogSyncTask {
         .renewLock()
         .catch((e) =>
           this.logger.error(
-            `[Sync:Lock] Failed to renew lock | error="${e.message}"`,
+            { action: 'renew_lock_failed', error: e.message },
+            '[Sync:Lock] Failed to renew lock',
           ),
         )
     }, 60 * 1000)
@@ -157,7 +186,12 @@ export class AuditLogSyncTask {
       )
 
       this.logger.log(
-        `[Sync:Reconciliation] Scanning backwards for delayed logs | start="${lookbackStart.toISOString()}" end="${safeNow.toISOString()}"`,
+        {
+          action: 'reconciliation_sync_scanning',
+          start: lookbackStart.toISOString(),
+          end: safeNow.toISOString(),
+        },
+        '[Sync:Reconciliation] Scanning backwards for delayed logs',
       )
 
       const dayWindows = splitIntoDailyWindows(lookbackStart, safeNow)
@@ -178,10 +212,13 @@ export class AuditLogSyncTask {
         .filter((r, i): r is PromiseFulfilledResult<SharepointContentDto[]> => {
           if (r.status === 'fulfilled') return true
           this.logger.warn(
-            `[Sync:Reconciliation] Failed to fetch logs for window | 
-            start="${dayWindows[i].start.toISOString()}" | 
-            end="${dayWindows[i].end.toISOString()}" | 
-            error="${(r.reason as Error).message}"`,
+            {
+              action: 'reconciliation_sync_fetch_failed',
+              start: dayWindows[i].start.toISOString(),
+              end: dayWindows[i].end.toISOString(),
+              error: (r.reason as Error).message,
+            },
+            '[Sync:Reconciliation] Failed to fetch logs for window',
           )
           return false
         })
@@ -194,12 +231,17 @@ export class AuditLogSyncTask {
       totalFailed = result.failed
 
       this.logger.log(
-        `[Sync:Reconciliation] Completed | failed_ids_count=${totalFailed}`,
+        { action: 'reconciliation_sync_success', failedIdsCount: totalFailed },
+        '[Sync:Reconciliation] Completed',
       )
     } catch (error: any) {
       this.logger.error(
-        `[Sync:Reconciliation] Sync failed | error="${error.message}"`,
-        error.stack,
+        {
+          action: 'reconciliation_sync_failed',
+          error: error.message,
+          stack: error.stack,
+        },
+        '[Sync:Reconciliation] Sync failed',
       )
     } finally {
       clearInterval(renewalInterval)

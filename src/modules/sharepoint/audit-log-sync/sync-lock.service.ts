@@ -24,7 +24,10 @@ export class SyncLockService implements OnModuleInit {
       .values({ key: SYNC_CONFIG.LOCK_KEY, lockedUntil: null })
       .orIgnore()
       .execute()
-    this.logger.log('[Sync:Lock] Lock row pre-seeded successfully')
+    this.logger.log(
+      { action: 'lock_preseeded' },
+      '[Sync:Lock] Lock row pre-seeded successfully',
+    )
   }
 
   /**
@@ -42,7 +45,10 @@ export class SyncLockService implements OnModuleInit {
       })
 
       if (!row) {
-        this.logger.warn('[Sync:Lock] Lock row missing unexpectedly')
+        this.logger.warn(
+          { action: 'lock_missing' },
+          '[Sync:Lock] Lock row missing unexpectedly',
+        )
         return false
       }
 

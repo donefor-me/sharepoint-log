@@ -74,7 +74,8 @@ export class AuditLogSyncService {
       }
 
       this.logger.log(
-        `[Sync:DLQ] Processing batch of pending logs | count=${pendingLogs.length}`,
+        { action: 'dlq_process_batch', count: pendingLogs.length },
+        '[Sync:DLQ] Processing batch of pending logs',
       )
 
       const doneLogUris: string[] = []
