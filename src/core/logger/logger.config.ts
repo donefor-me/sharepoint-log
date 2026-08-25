@@ -23,7 +23,20 @@ export const loggerConfig: Params = {
     autoLogging: {
       ignore: (_req) => false,
     },
+    customSuccessMessage: (req, res) => {
+      if (res.statusCode >= 400 && (res as any).err) {
+        return `${req.method} ${req.url} - HTTP ${res.statusCode} - ${(res as any).err.message}`
+      }
+      return 'Request completed'
+    },
+    customErrorMessage: (req, res, err) => {
+      return `${req.method} ${req.url} - HTTP ${res.statusCode} - ${err.message}`
+    },
     customLogLevel: (_req, res, err) => {
+      const exception = err || (res as any).err
+      if (exception && exception.logLevel) {
+        return exception.logLevel
+      }
       if (res.statusCode >= 500 || err) return 'error'
       if (res.statusCode >= 400) return 'warn'
       return 'silent'
