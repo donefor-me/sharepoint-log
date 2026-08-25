@@ -1,0 +1,18 @@
+services:
+  sharepoint-log:
+    restart: always
+    container_name: sharepoint-log
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    ports:
+      - '3636:3636'
+    networks:
+      - techzen-net
+
+networks:
+  techzen-net:
+    name: techzen-net
+    external: true

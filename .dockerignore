@@ -4,5 +4,4 @@ dist
 .env
 npm-debug.log
 test
-src
 coverage
