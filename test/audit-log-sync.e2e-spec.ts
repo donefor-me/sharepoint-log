@@ -6,28 +6,28 @@ import { DataSource, Repository } from 'typeorm'
 
 import { LoggerModule } from '../src/core/logger/logger.module'
 import { EncryptionService } from '../src/modules/encryption/encryption.service'
-import { AuditLogSyncModule } from '../src/modules/sharepoint/audit-log-sync/audit-log-sync.module'
-import { AuditLogSyncService } from '../src/modules/sharepoint/audit-log-sync/audit-log-sync.service'
-import { AuditLogDlqStatus } from '../src/modules/sharepoint/audit-log-sync/constants/dlq-status.constant'
-import { SYNC_CONFIG } from '../src/modules/sharepoint/audit-log-sync/constants/sync.constant'
-import { AuditLog } from '../src/modules/sharepoint/audit-log-sync/entities/audit-log.entity'
-import { AuditLogDlq } from '../src/modules/sharepoint/audit-log-sync/entities/audit-log-dlq.entity'
-import { AuditLogSyncState } from '../src/modules/sharepoint/audit-log-sync/entities/audit-log-sync-state.entity'
-import { SyncLockService } from '../src/modules/sharepoint/audit-log-sync/sync-lock.service'
-import { AuditLogSyncTask } from '../src/modules/sharepoint/audit-log-sync/tasks/audit-log-sync.task'
-import { SharepointService } from '../src/modules/sharepoint/integration/sharepoint.service'
+import { AuditLogDlqStatus } from '../src/modules/sharepoint-audit-log-sync/constants/dlq-status.constant'
+import { SYNC_CONFIG } from '../src/modules/sharepoint-audit-log-sync/constants/sync.constant'
+import { AuditLog } from '../src/modules/sharepoint-audit-log-sync/entities/audit-log.entity'
+import { AuditLogDlq } from '../src/modules/sharepoint-audit-log-sync/entities/audit-log-dlq.entity'
+import { AuditLogSyncState } from '../src/modules/sharepoint-audit-log-sync/entities/audit-log-sync-state.entity'
+import { SharepointAuditLogSyncModule } from '../src/modules/sharepoint-audit-log-sync/sharepoint-audit-log-sync.module'
+import { SharepointAuditLogSyncService } from '../src/modules/sharepoint-audit-log-sync/sharepoint-audit-log-sync.service'
+import { SyncLockService } from '../src/modules/sharepoint-audit-log-sync/sync-lock.service'
+import { SharepointAuditLogSyncTask } from '../src/modules/sharepoint-audit-log-sync/tasks/sharepoint-audit-log-sync.task'
+import { SharepointIntegrationService } from '../src/modules/sharepoint-integration/sharepoint-integration.service'
 import { TestDatabaseModule } from './utils/test-database.module'
 
 describe('AuditLogSync Workflow (e2e)', () => {
   let dataSource: DataSource
   let moduleFixture: TestingModule
-  let syncTask: AuditLogSyncTask
-  let syncService: AuditLogSyncService
+  let syncTask: SharepointAuditLogSyncTask
+  let syncService: SharepointAuditLogSyncService
   let syncStateRepo: Repository<AuditLogSyncState>
   let auditLogRepo: Repository<AuditLog>
   let dlqRepo: Repository<AuditLogDlq>
 
-  const mockSharepointService = {
+  const mockSharepointIntegrationService = {
     fetchAllLogs: jest.fn(),
     fetchActivityContent: jest.fn(),
   }
@@ -76,10 +76,10 @@ describe('AuditLogSync Workflow (e2e)', () => {
 
   beforeAll(async () => {
     moduleFixture = await Test.createTestingModule({
-      imports: [LoggerModule, TestDatabaseModule, AuditLogSyncModule],
+      imports: [LoggerModule, TestDatabaseModule, SharepointAuditLogSyncModule],
     })
-      .overrideProvider(SharepointService)
-      .useValue(mockSharepointService)
+      .overrideProvider(SharepointIntegrationService)
+      .useValue(mockSharepointIntegrationService)
       .overrideProvider(EncryptionService)
       .useValue({ encrypt: jest.fn(), decrypt: jest.fn() })
       .overrideProvider(SyncLockService)
@@ -88,8 +88,12 @@ describe('AuditLogSync Workflow (e2e)', () => {
       .useValue(mockLogger)
       .compile()
 
-    syncTask = moduleFixture.get<AuditLogSyncTask>(AuditLogSyncTask)
-    syncService = moduleFixture.get<AuditLogSyncService>(AuditLogSyncService)
+    syncTask = moduleFixture.get<SharepointAuditLogSyncTask>(
+      SharepointAuditLogSyncTask,
+    )
+    syncService = moduleFixture.get<SharepointAuditLogSyncService>(
+      SharepointAuditLogSyncService,
+    )
     syncStateRepo = moduleFixture.get<Repository<AuditLogSyncState>>(
       getRepositoryToken(AuditLogSyncState),
     )
@@ -119,15 +123,19 @@ describe('AuditLogSync Workflow (e2e)', () => {
 
   describe('Group 1: Forward Sync', () => {
     it('FS-01: Watermark Catchup - Watermark tiến chuẩn 1 ngày đến khi chạm safeNow', async () => {
-      mockSharepointService.fetchAllLogs.mockResolvedValue([])
-      mockSharepointService.fetchActivityContent.mockResolvedValue([])
+      mockSharepointIntegrationService.fetchAllLogs.mockResolvedValue([])
+      mockSharepointIntegrationService.fetchActivityContent.mockResolvedValue(
+        [],
+      )
 
       const ONE_DAY_MS = 24 * 60 * 60 * 1000
       let lastWatermarkMs = 0
       for (let i = 0; i < 7; i++) {
         await syncTask.handleForwardSync()
 
-        expect(mockSharepointService.fetchAllLogs).toHaveBeenNthCalledWith(
+        expect(
+          mockSharepointIntegrationService.fetchAllLogs,
+        ).toHaveBeenNthCalledWith(
           i + 1,
           expect.objectContaining({ startTime: expect.any(String) }),
         )
@@ -146,7 +154,7 @@ describe('AuditLogSync Workflow (e2e)', () => {
     })
 
     it('FS-02: Edge Case Không có log nào - Vẫn tiến watermark bình thường', async () => {
-      mockSharepointService.fetchAllLogs.mockResolvedValue([])
+      mockSharepointIntegrationService.fetchAllLogs.mockResolvedValue([])
       await syncTask.handleForwardSync()
       const state = await syncStateRepo.findOne({
         where: { key: SYNC_CONFIG.STATE_WATERMARK_KEY },
@@ -165,9 +173,11 @@ describe('AuditLogSync Workflow (e2e)', () => {
           contentUri: `uri_${i}`,
           contentId: `id_${i}`,
         }))
-        mockSharepointService.fetchAllLogs.mockResolvedValue(mockLargeData)
-        mockSharepointService.fetchActivityContent.mockImplementation((uri) =>
-          Promise.resolve([createMockActivity(uri)]),
+        mockSharepointIntegrationService.fetchAllLogs.mockResolvedValue(
+          mockLargeData,
+        )
+        mockSharepointIntegrationService.fetchActivityContent.mockImplementation(
+          (uri) => Promise.resolve([createMockActivity(uri)]),
         )
 
         await syncTask.handleForwardSync()
@@ -215,16 +225,18 @@ describe('AuditLogSync Workflow (e2e)', () => {
         rawData: {},
       })
 
-      mockSharepointService.fetchAllLogs.mockResolvedValue([
+      mockSharepointIntegrationService.fetchAllLogs.mockResolvedValue([
         { contentUri: 'uri_old', contentId: 'id_old' },
         { contentUri: 'uri_delayed', contentId: 'id_delayed' },
       ])
 
       let fetchCallCount = 0
-      mockSharepointService.fetchActivityContent.mockImplementation((uri) => {
-        fetchCallCount++
-        return Promise.resolve([createMockActivity(uri)])
-      })
+      mockSharepointIntegrationService.fetchActivityContent.mockImplementation(
+        (uri) => {
+          fetchCallCount++
+          return Promise.resolve([createMockActivity(uri)])
+        },
+      )
 
       const saveSpy = jest.spyOn(dlqRepo, 'save')
 
@@ -254,11 +266,11 @@ describe('AuditLogSync Workflow (e2e)', () => {
       jest.setSystemTime(fakeNow)
 
       try {
-        mockSharepointService.fetchAllLogs.mockResolvedValue([])
+        mockSharepointIntegrationService.fetchAllLogs.mockResolvedValue([])
         await syncTask.handleReconciliationSync()
 
-        expect(mockSharepointService.fetchAllLogs).toHaveBeenCalled()
-        const calls = mockSharepointService.fetchAllLogs.mock.calls
+        expect(mockSharepointIntegrationService.fetchAllLogs).toHaveBeenCalled()
+        const calls = mockSharepointIntegrationService.fetchAllLogs.mock.calls
         const firstCallArgs = calls[0]
 
         const expectedTime =
@@ -275,10 +287,10 @@ describe('AuditLogSync Workflow (e2e)', () => {
 
   describe('Group 3: Error Handling & DLQ', () => {
     it('ERR-01: API Detail Fail - Log vào DLQ với status PENDING và tăng retry', async () => {
-      mockSharepointService.fetchAllLogs.mockResolvedValue([
+      mockSharepointIntegrationService.fetchAllLogs.mockResolvedValue([
         { contentUri: 'uri_err', contentId: 'id_err' },
       ])
-      mockSharepointService.fetchActivityContent.mockRejectedValueOnce(
+      mockSharepointIntegrationService.fetchActivityContent.mockRejectedValueOnce(
         new Error('Network Timeout'),
       )
 
@@ -296,10 +308,10 @@ describe('AuditLogSync Workflow (e2e)', () => {
     })
 
     it('ERR-02: Max Retry Threshold - Khóa vĩnh viễn FAILED', async () => {
-      mockSharepointService.fetchAllLogs.mockResolvedValue([
+      mockSharepointIntegrationService.fetchAllLogs.mockResolvedValue([
         { contentUri: 'uri_fail', contentId: 'id_fail' },
       ])
-      mockSharepointService.fetchActivityContent.mockRejectedValue(
+      mockSharepointIntegrationService.fetchActivityContent.mockRejectedValue(
         new Error('Fatal Error'),
       )
 
@@ -314,21 +326,23 @@ describe('AuditLogSync Workflow (e2e)', () => {
       expect(dlqFail!.status).toBe(AuditLogDlqStatus.DLQ)
 
       const fetchCalls =
-        mockSharepointService.fetchActivityContent.mock.calls.length
+        mockSharepointIntegrationService.fetchActivityContent.mock.calls.length
       expect(fetchCalls).toBe(SYNC_CONFIG.MAX_RETRY_PER_ID)
     })
 
     it('ERR-03: Partial Failures - Ghi DB một phần thành công, phần lỗi kẹt lại', async () => {
-      mockSharepointService.fetchAllLogs.mockResolvedValue([
+      mockSharepointIntegrationService.fetchAllLogs.mockResolvedValue([
         { contentUri: 'uri_good', contentId: 'id_good' },
         { contentUri: 'uri_bad', contentId: 'id_bad' },
       ])
 
-      mockSharepointService.fetchActivityContent.mockImplementation((uri) => {
-        if (uri === 'uri_good')
-          return Promise.resolve([createMockActivity(uri, 'GoodOp')])
-        return Promise.reject(new Error('Bad Format'))
-      })
+      mockSharepointIntegrationService.fetchActivityContent.mockImplementation(
+        (uri) => {
+          if (uri === 'uri_good')
+            return Promise.resolve([createMockActivity(uri, 'GoodOp')])
+          return Promise.reject(new Error('Bad Format'))
+        },
+      )
 
       await syncTask.handleForwardSync()
 
@@ -349,9 +363,11 @@ describe('AuditLogSync Workflow (e2e)', () => {
         makeDlqEntry({ contentUri: 'uri_recovery', contentId: 'id_recovery' }),
       )
 
-      mockSharepointService.fetchActivityContent.mockImplementation((uri) => {
-        return Promise.resolve([createMockActivity(uri, 'RecoveryOp')])
-      })
+      mockSharepointIntegrationService.fetchActivityContent.mockImplementation(
+        (uri) => {
+          return Promise.resolve([createMockActivity(uri, 'RecoveryOp')])
+        },
+      )
 
       await syncService.processPendingLogs()
 
@@ -374,7 +390,9 @@ describe('AuditLogSync Workflow (e2e)', () => {
 
       await syncTask.handleForwardSync()
 
-      expect(mockSharepointService.fetchAllLogs).not.toHaveBeenCalled()
+      expect(
+        mockSharepointIntegrationService.fetchAllLogs,
+      ).not.toHaveBeenCalled()
       expect(mockSyncLockService.release).not.toHaveBeenCalled()
     })
 
@@ -393,11 +411,13 @@ describe('AuditLogSync Workflow (e2e)', () => {
         where: { contentUri: 'uri_proc' },
       })
       expect(dlqProc!.status).toBe(AuditLogDlqStatus.DONE)
-      expect(mockSharepointService.fetchActivityContent).not.toHaveBeenCalled()
+      expect(
+        mockSharepointIntegrationService.fetchActivityContent,
+      ).not.toHaveBeenCalled()
     })
 
     it('CON-03: Ensure Lock is Released after execution (even on error)', async () => {
-      mockSharepointService.fetchAllLogs.mockRejectedValue(
+      mockSharepointIntegrationService.fetchAllLogs.mockRejectedValue(
         new Error('Fatal API Failure'),
       )
 
@@ -418,7 +438,7 @@ describe('AuditLogSync Workflow (e2e)', () => {
         key: SYNC_CONFIG.STATE_WATERMARK_KEY,
         value: new Date('2026-08-01T00:00:00Z'),
       })
-      mockSharepointService.fetchAllLogs.mockRejectedValue(
+      mockSharepointIntegrationService.fetchAllLogs.mockRejectedValue(
         new Error('Sharepoint 500 Internal Error'),
       )
 
@@ -434,12 +454,12 @@ describe('AuditLogSync Workflow (e2e)', () => {
     })
 
     it('EXT-02: Duplicate IDs - Dữ liệu trùng contentId từ list API', async () => {
-      mockSharepointService.fetchAllLogs.mockResolvedValue([
+      mockSharepointIntegrationService.fetchAllLogs.mockResolvedValue([
         { contentUri: 'uri_dup', contentId: 'id_dup' },
         { contentUri: 'uri_dup', contentId: 'id_dup' },
       ])
 
-      mockSharepointService.fetchActivityContent.mockResolvedValue([
+      mockSharepointIntegrationService.fetchActivityContent.mockResolvedValue([
         createMockActivity('uri_dup'),
       ])
 
@@ -450,10 +470,12 @@ describe('AuditLogSync Workflow (e2e)', () => {
     })
 
     it('EXT-03: Empty Content - Log list có nhưng content rỗng', async () => {
-      mockSharepointService.fetchAllLogs.mockResolvedValue([
+      mockSharepointIntegrationService.fetchAllLogs.mockResolvedValue([
         { contentUri: 'uri_empty', contentId: 'id_empty' },
       ])
-      mockSharepointService.fetchActivityContent.mockResolvedValue([])
+      mockSharepointIntegrationService.fetchActivityContent.mockResolvedValue(
+        [],
+      )
 
       await syncTask.handleForwardSync()
 
@@ -463,10 +485,10 @@ describe('AuditLogSync Workflow (e2e)', () => {
     })
 
     it('EXT-04: Missing Fields - Fallback gracefully due to nullable columns', async () => {
-      mockSharepointService.fetchAllLogs.mockResolvedValue([
+      mockSharepointIntegrationService.fetchAllLogs.mockResolvedValue([
         { contentUri: 'uri_invalid', contentId: 'id_invalid' },
       ])
-      mockSharepointService.fetchActivityContent.mockResolvedValue([
+      mockSharepointIntegrationService.fetchActivityContent.mockResolvedValue([
         {
           Id: '00000000-0000-0000-0000-000000000002',
           Operation: 'MockOp',
@@ -497,10 +519,10 @@ describe('AuditLogSync Workflow (e2e)', () => {
         rawData: {},
       })
 
-      mockSharepointService.fetchAllLogs.mockResolvedValue([
+      mockSharepointIntegrationService.fetchAllLogs.mockResolvedValue([
         { contentUri: 'uri_conflict', contentId: 'id_conflict' },
       ])
-      mockSharepointService.fetchActivityContent.mockResolvedValue([
+      mockSharepointIntegrationService.fetchActivityContent.mockResolvedValue([
         { ...createMockActivity('uri_conflict'), Id: conflictId },
       ])
 
@@ -521,13 +543,15 @@ describe('AuditLogSync Workflow (e2e)', () => {
     it('EXT-07: Lock Renewal - Heartbeat via setInterval', async () => {
       jest.useFakeTimers({ doNotFake: ['nextTick', 'setImmediate'] })
 
-      mockSharepointService.fetchAllLogs.mockResolvedValue([
+      mockSharepointIntegrationService.fetchAllLogs.mockResolvedValue([
         { contentUri: 'uri_slow', contentId: 'id_slow' },
       ])
-      mockSharepointService.fetchActivityContent.mockImplementation((uri) => {
-        jest.advanceTimersByTime(125 * 1000)
-        return Promise.resolve([createMockActivity(uri)])
-      })
+      mockSharepointIntegrationService.fetchActivityContent.mockImplementation(
+        (uri) => {
+          jest.advanceTimersByTime(125 * 1000)
+          return Promise.resolve([createMockActivity(uri)])
+        },
+      )
 
       const syncPromise = syncTask.handleForwardSync()
       await syncPromise
@@ -538,7 +562,7 @@ describe('AuditLogSync Workflow (e2e)', () => {
     })
 
     it('EXT-08: Empty Input - Null/Empty contentUri handling', async () => {
-      mockSharepointService.fetchAllLogs.mockResolvedValue([
+      mockSharepointIntegrationService.fetchAllLogs.mockResolvedValue([
         { contentUri: '', contentId: 'id_empty_uri' },
         { contentUri: null as any, contentId: 'id_null_uri' },
       ])
