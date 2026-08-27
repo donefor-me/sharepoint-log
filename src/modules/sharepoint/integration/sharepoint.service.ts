@@ -58,7 +58,14 @@ export class SharepointService {
       await this.tokenCacheRepository.saveToken(data)
       return data.access_token
     } catch (error: any) {
-      throw new SharepointApiException(error.message)
+      throw new SharepointApiException(
+        error?.message || 'Failed to authenticate with SharePoint API',
+        {
+          target: `POST ${url}`,
+          upstreamStatus: error?.response?.status,
+          upstreamResponse: error?.response?.data,
+        },
+      )
     }
   }
 
@@ -86,7 +93,14 @@ export class SharepointService {
         ? await this.httpClient.get<T>(url, { headers })
         : await this.httpClient.post<T>(url, body, { headers })
     } catch (error: any) {
-      throw new SharepointApiException(error.message)
+      throw new SharepointApiException(
+        error?.message || 'SharePoint API request failed',
+        {
+          target: `${method.toUpperCase()} ${url}`,
+          upstreamStatus: error?.response?.status,
+          upstreamResponse: error?.response?.data,
+        },
+      )
     }
   }
 
@@ -124,7 +138,14 @@ export class SharepointService {
       ) {
         return null
       }
-      throw new SharepointApiException(error.message)
+      throw new SharepointApiException(
+        error?.message || 'Failed to start SharePoint subscription',
+        {
+          target: `POST ${url}`,
+          upstreamStatus: error?.response?.status,
+          upstreamResponse: error?.response?.data,
+        },
+      )
     }
   }
 
@@ -180,7 +201,14 @@ export class SharepointService {
         headers: { Authorization: `Bearer ${token}` },
       })
     } catch (error: any) {
-      throw new SharepointApiException(error.message)
+      throw new SharepointApiException(
+        error?.message || 'Failed to fetch raw data from SharePoint',
+        {
+          target: `GET ${url}`,
+          upstreamStatus: error?.response?.status,
+          upstreamResponse: error?.response?.data,
+        },
+      )
     }
   }
 
