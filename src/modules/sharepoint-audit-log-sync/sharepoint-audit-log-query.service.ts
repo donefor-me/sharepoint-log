@@ -84,6 +84,7 @@ export class SharepointAuditLogQueryService {
       'log.userId',
       'log.objectId',
       'log.itemName',
+      'log.workload',
     ])
     query.skip((page - 1) * limit).take(limit)
 
