@@ -1,7 +1,7 @@
 import { withRetry } from '@common/utils/http-retry.util'
 import { EnvironmentVariables } from '@core/config/env.validation'
 import { HttpClientService } from '@core/http-client/http-client.service'
-import { Injectable, Logger } from '@nestjs/common'
+import { Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import * as qs from 'qs'
 
@@ -19,7 +19,6 @@ import { SharepointTokenCacheRepository } from './repositories/sharepoint-token-
 export class SharepointService {
   private readonly tenantId: string
   private readonly ALLOWED_API_PREFIX = 'https://manage.office.com/api/v1.0/'
-  private readonly logger = new Logger(SharepointService.name)
 
   constructor(
     private readonly httpClient: HttpClientService,
