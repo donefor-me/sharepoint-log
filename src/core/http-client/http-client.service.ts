@@ -1,6 +1,6 @@
 import { HttpService } from '@nestjs/axios'
 import { Injectable } from '@nestjs/common'
-import { AxiosRequestConfig } from 'axios'
+import { AxiosRequestConfig, AxiosResponse } from 'axios'
 import { firstValueFrom } from 'rxjs'
 
 @Injectable()
@@ -28,8 +28,8 @@ export class HttpClientService {
   async getRaw<T = any>(
     url: string,
     config?: AxiosRequestConfig,
-  ): Promise<any> {
-    return firstValueFrom(
+  ): Promise<AxiosResponse<T>> {
+    return await firstValueFrom(
       this.httpService.request<T>({ method: 'GET', url, ...config }),
     )
   }

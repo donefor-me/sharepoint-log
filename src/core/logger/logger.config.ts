@@ -2,89 +2,80 @@ import { EnvironmentVariables } from '@core/config/env.validation'
 import { ConfigService } from '@nestjs/config'
 import { randomUUID } from 'crypto'
 import { Params } from 'nestjs-pino'
+import { stdSerializers } from 'pino'
 
-const MAX_STACK_LINES = 5
+export function getLoggerConfig(
+  configService: ConfigService<EnvironmentVariables, true>,
+): Params {
+  const isProd = configService.get('NODE_ENV', { infer: true }) === 'production'
 
-function truncateStack(stack: string | undefined): string | undefined {
-  if (!stack) return stack
-  const lines = stack.split('\n')
-  if (lines.length <= MAX_STACK_LINES) return stack
-  const omitted = lines.length - MAX_STACK_LINES
-  return `${lines.slice(0, MAX_STACK_LINES).join('\n')}\n    ... (${omitted} more lines)`
-}
+  return {
+    pinoHttp: {
+      genReqId: (req) =>
+        (req.headers['x-correlation-id'] as string) || randomUUID(),
+      autoLogging: {
+        ignore: () => false,
+      },
+      customLogLevel: (_req, res, err) => {
+        if (res.statusCode >= 500 || err) return 'error'
+        if (res.statusCode >= 400 && res.statusCode < 500) return 'warn'
+        return 'info'
+      },
+      serializers: {
+        err: (err) => {
+          const status =
+            err.status || err.response?.statusCode || err.statusCode || 500
 
-const configService: ConfigService<EnvironmentVariables, true> =
-  new ConfigService()
-
-export const loggerConfig: Params = {
-  pinoHttp: {
-    genReqId: (req) =>
-      (req.headers['x-correlation-id'] as string) || randomUUID(),
-    autoLogging: {
-      ignore: (_req) => false,
-    },
-    customSuccessMessage: (req, res) => {
-      if (res.statusCode >= 400 && (res as any).err) {
-        return `${req.method} ${req.url} - HTTP ${res.statusCode} - ${(res as any).err.message}`
-      }
-      return 'Request completed'
-    },
-    customErrorMessage: (req, res, err) => {
-      return `${req.method} ${req.url} - HTTP ${res.statusCode} - ${err.message}`
-    },
-    customLogLevel: (_req, res, err) => {
-      const exception = err || (res as any).err
-      if (exception && exception.logLevel) {
-        return exception.logLevel
-      }
-      if (res.statusCode >= 500 || err) return 'error'
-      if (res.statusCode >= 400) return 'warn'
-      return 'silent'
-    },
-    customErrorObject: (_req, res, error: Error) => {
-      const isServerError = res.statusCode >= 500
-      return {
-        err: isServerError
-          ? {
-              type: (error as any).type ?? error.name,
-              message: error.message,
-              stack: truncateStack(error.stack),
+          if (status >= 400 && status < 500) {
+            if (
+              err.name === 'ZodValidationException' ||
+              err.response?.message === 'Validation failed'
+            ) {
+              let validationDetails = err.response?.errors
+              if (!validationDetails && err.error?.message) {
+                try {
+                  validationDetails = JSON.parse(err.error.message)
+                } catch {
+                  // ignore parse error
+                }
+              }
+              return {
+                type: err.name || 'ValidationException',
+                message: err.message,
+                validationDetails: validationDetails || err.response?.message,
+              }
             }
-          : {
-              type: (error as any).type ?? error.name,
-              message: error.message,
-            },
-      }
-    },
-    transport:
-      configService.get('NODE_ENV', { infer: true }) === 'production'
+
+            return {
+              type: err.name || 'ClientError',
+              message: err.message,
+            }
+          }
+
+          return stdSerializers.err(err)
+        },
+      },
+      transport: isProd
         ? undefined
         : {
             target: 'pino-pretty',
             options: {
-              singleLine: true,
               colorize: true,
+              singleLine: false,
+              translateTime: 'SYS:yyyy-mm-dd HH:MM:ss.l',
             },
           },
-    redact: {
-      paths: [
-        'req.headers.authorization',
-        'req.headers.cookie',
-        'body.password',
-        'body.token',
-      ],
-      censor: '[REDACTED]',
-    },
-    serializers: {
-      // err: stdSerializers.err,
-      err: (err: unknown) => {
-        if (!(err instanceof Error)) return err
-        return {
-          type: (err as any).type ?? err.name,
-          message: err.message,
-          stack: truncateStack(err.stack),
-        }
+      redact: {
+        paths: [
+          'req.headers.authorization',
+          'req.headers.cookie',
+          'body.password',
+          'body.token',
+          'body.accessToken',
+          'body.refreshToken',
+        ],
+        censor: '[REDACTED]',
       },
     },
-  },
+  }
 }

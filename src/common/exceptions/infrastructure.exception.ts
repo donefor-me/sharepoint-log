@@ -8,6 +8,7 @@ export class InfrastructureException extends AppException {
   constructor(
     message: string,
     public readonly statusCode: HttpStatus = HttpStatus.BAD_GATEWAY,
+    public readonly details?: Record<string, any>,
   ) {
     super(message)
   }
