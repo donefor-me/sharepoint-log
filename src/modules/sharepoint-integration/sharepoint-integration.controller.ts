@@ -10,12 +10,12 @@ import {
 import { ApiTags } from '@nestjs/swagger'
 
 import { TimeWindowDto } from './dto/time-window.dto'
-import { SharepointService } from './sharepoint.service'
+import { SharepointIntegrationService } from './sharepoint-integration.service'
 
 @ApiTags('SharePoint Integration')
 @Controller('api/sharepoint')
-export class SharepointController {
-  constructor(private readonly sharepointService: SharepointService) {}
+export class SharepointIntegrationController {
+  constructor(private readonly sharepointService: SharepointIntegrationService) {}
 
   /**
    * Endpoint to verify the connection status to the SharePoint API.

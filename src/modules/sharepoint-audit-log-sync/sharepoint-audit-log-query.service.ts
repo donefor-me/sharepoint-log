@@ -18,7 +18,7 @@ import { AuditLog } from './entities/audit-log.entity'
 import { AuditLogSyncState } from './entities/audit-log-sync-state.entity'
 
 @Injectable()
-export class AuditLogQueryService {
+export class SharepointAuditLogQueryService {
   constructor(
     @InjectRepository(AuditLog)
     private readonly auditLogRepository: Repository<AuditLog>,

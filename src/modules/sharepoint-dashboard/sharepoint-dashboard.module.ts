@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common'
 
-import { AuditLogSyncModule } from '../audit-log-sync/audit-log-sync.module'
+import { SharepointAuditLogSyncModule } from '../sharepoint-audit-log-sync/sharepoint-audit-log-sync.module'
 import { SharepointDashboardController } from './sharepoint-dashboard.controller'
 import { SharepointDashboardService } from './sharepoint-dashboard.service'
 
 @Module({
-  imports: [AuditLogSyncModule],
+  imports: [SharepointAuditLogSyncModule],
   controllers: [SharepointDashboardController],
   providers: [SharepointDashboardService],
 })

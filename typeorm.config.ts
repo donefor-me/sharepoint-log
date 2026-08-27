@@ -2,10 +2,10 @@ import { config } from 'dotenv'
 import { DataSource } from 'typeorm'
 import { SnakeNamingStrategy } from 'typeorm-naming-strategies'
 
-import { AuditLog } from './src/modules/sharepoint/audit-log-sync/entities/audit-log.entity'
-import { AuditLogDlq } from './src/modules/sharepoint/audit-log-sync/entities/audit-log-dlq.entity'
-import { AuditLogSyncState } from './src/modules/sharepoint/audit-log-sync/entities/audit-log-sync-state.entity'
-import { SharepointTokenCache } from './src/modules/sharepoint/integration/entities/sharepoint-token-cache.entity'
+import { AuditLog } from './src/modules/sharepoint-audit-log-sync/entities/audit-log.entity'
+import { AuditLogDlq } from './src/modules/sharepoint-audit-log-sync/entities/audit-log-dlq.entity'
+import { AuditLogSyncState } from './src/modules/sharepoint-audit-log-sync/entities/audit-log-sync-state.entity'
+import { SharepointTokenCache } from './src/modules/sharepoint-integration/entities/sharepoint-token-cache.entity'
 
 config()
 

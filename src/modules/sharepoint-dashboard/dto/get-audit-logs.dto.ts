@@ -1,7 +1,7 @@
 import { createZodDto } from 'nestjs-zod'
 import { z } from 'zod'
 
-import { SHAREPOINT_OPERATIONS } from '../../constants/sharepoint-operations.constant'
+import { SHAREPOINT_OPERATIONS } from '../../sharepoint-dashboard/constants/sharepoint-operations.constant'
 
 export const GetAuditLogsSchema = z
   .object({

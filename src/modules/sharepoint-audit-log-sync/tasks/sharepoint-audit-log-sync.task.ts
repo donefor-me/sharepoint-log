@@ -5,23 +5,23 @@ import { Cron } from '@nestjs/schedule'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 
-import { SharepointContentDto } from '../../integration/dto/sharepoint-management.dto'
-import { SharepointService } from '../../integration/sharepoint.service'
-import { AuditLogSyncService } from '../audit-log-sync.service'
+import { SharepointContentDto } from '../../sharepoint-integration/dto/sharepoint-management.dto'
+import { SharepointIntegrationService } from '../../sharepoint-integration/sharepoint-integration.service'
+import { SharepointAuditLogSyncService } from '../sharepoint-audit-log-sync.service'
 import { SYNC_CONFIG } from '../constants/sync.constant'
 import { AuditLogSyncState } from '../entities/audit-log-sync-state.entity'
 import { SyncLockService } from '../sync-lock.service'
 
 @Injectable()
-export class AuditLogSyncTask {
-  private readonly logger = new Logger(AuditLogSyncTask.name)
+export class SharepointAuditLogSyncTask {
+  private readonly logger = new Logger(SharepointAuditLogSyncTask.name)
 
   constructor(
     @InjectRepository(AuditLogSyncState)
     private readonly syncStateRepo: Repository<AuditLogSyncState>,
     private readonly syncLockService: SyncLockService,
-    private readonly sharepointService: SharepointService,
-    private readonly syncService: AuditLogSyncService,
+    private readonly sharepointService: SharepointIntegrationService,
+    private readonly syncService: SharepointAuditLogSyncService,
   ) {}
 
   /**

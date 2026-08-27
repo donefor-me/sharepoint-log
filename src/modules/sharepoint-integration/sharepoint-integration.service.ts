@@ -16,7 +16,7 @@ import { TimeWindowDto } from './dto/time-window.dto'
 import { SharepointApiException } from './exceptions/sharepoint-api.exception'
 import { SharepointTokenCacheRepository } from './repositories/sharepoint-token-cache.repository'
 @Injectable()
-export class SharepointService {
+export class SharepointIntegrationService {
   private readonly tenantId: string
   private readonly ALLOWED_API_PREFIX = 'https://manage.office.com/api/v1.0/'
 

@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 
-import { EncryptionService } from '../../../encryption/encryption.service'
+import { EncryptionService } from '../../encryption/encryption.service'
 import { SharepointAuthResponseDto } from '../dto/sharepoint-auth-response.dto'
 import { SharepointTokenCache } from '../entities/sharepoint-token-cache.entity'
 

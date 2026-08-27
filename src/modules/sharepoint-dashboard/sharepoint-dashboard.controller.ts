@@ -2,7 +2,7 @@ import { ResponseMessage } from '@common/decorators/response-message.decorator'
 import { Controller, Get, HttpCode, HttpStatus, Query } from '@nestjs/common'
 import { ApiTags } from '@nestjs/swagger'
 
-import type { AuditLog } from '../audit-log-sync/entities/audit-log.entity'
+import type { AuditLog } from '../sharepoint-audit-log-sync/entities/audit-log.entity'
 import { GetAuditLogsDto } from './dto/get-audit-logs.dto'
 import { SharepointDashboardService } from './sharepoint-dashboard.service'
 

@@ -4,13 +4,13 @@ import { TypeOrmModule } from '@nestjs/typeorm'
 
 import { SharepointTokenCache } from './entities/sharepoint-token-cache.entity'
 import { SharepointTokenCacheRepository } from './repositories/sharepoint-token-cache.repository'
-import { SharepointController } from './sharepoint.controller'
-import { SharepointService } from './sharepoint.service'
+import { SharepointIntegrationController } from './sharepoint-integration.controller'
+import { SharepointIntegrationService } from './sharepoint-integration.service'
 
 @Module({
   imports: [TypeOrmModule.forFeature([SharepointTokenCache]), EncryptionModule],
-  controllers: [SharepointController],
-  providers: [SharepointService, SharepointTokenCacheRepository],
-  exports: [SharepointService],
+  controllers: [SharepointIntegrationController],
+  providers: [SharepointIntegrationService, SharepointTokenCacheRepository],
+  exports: [SharepointIntegrationService],
 })
 export class SharepointIntegrationModule {}

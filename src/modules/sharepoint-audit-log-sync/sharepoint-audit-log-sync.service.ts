@@ -4,8 +4,8 @@ import { Injectable, Logger } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { DataSource, In, Repository } from 'typeorm'
 
-import { SharepointContentDto } from '../integration/dto/sharepoint-management.dto'
-import { SharepointService } from '../integration/sharepoint.service'
+import { SharepointContentDto } from '../sharepoint-integration/dto/sharepoint-management.dto'
+import { SharepointIntegrationService } from '../sharepoint-integration/sharepoint-integration.service'
 import { AuditLogDlqStatus } from './constants/dlq-status.constant'
 import { SYNC_CONFIG } from './constants/sync.constant'
 import { Office365WorkloadType } from './constants/workload.constant'
@@ -13,11 +13,11 @@ import { AuditLog } from './entities/audit-log.entity'
 import { AuditLogDlq } from './entities/audit-log-dlq.entity'
 
 @Injectable()
-export class AuditLogSyncService {
-  private readonly logger = new Logger(AuditLogSyncService.name)
+export class SharepointAuditLogSyncService {
+  private readonly logger = new Logger(SharepointAuditLogSyncService.name)
 
   constructor(
-    private readonly sharepointService: SharepointService,
+    private readonly sharepointService: SharepointIntegrationService,
     private readonly dataSource: DataSource,
     @InjectRepository(AuditLogDlq)
     private readonly dlqRepo: Repository<AuditLogDlq>,

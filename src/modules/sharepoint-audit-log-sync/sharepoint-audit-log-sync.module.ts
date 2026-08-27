@@ -1,15 +1,15 @@
 import { Module } from '@nestjs/common'
 import { TypeOrmModule } from '@nestjs/typeorm'
 
-import { SharepointIntegrationModule } from '../integration/sharepoint-integration.module'
-import { AuditLogQueryService } from './audit-log-query.service'
-import { AuditLogSyncService } from './audit-log-sync.service'
+import { SharepointIntegrationModule } from '../sharepoint-integration/sharepoint-integration.module'
+import { SharepointAuditLogQueryService } from './sharepoint-audit-log-query.service'
+import { SharepointAuditLogSyncService } from './sharepoint-audit-log-sync.service'
 import { AuditLog } from './entities/audit-log.entity'
 import { AuditLogDlq } from './entities/audit-log-dlq.entity'
 import { AuditLogSyncState } from './entities/audit-log-sync-state.entity'
 import { AuditLogRepository } from './repositories/audit-log.repository'
 import { SyncLockService } from './sync-lock.service'
-import { AuditLogSyncTask } from './tasks/audit-log-sync.task'
+import { SharepointAuditLogSyncTask } from './tasks/sharepoint-audit-log-sync.task'
 
 @Module({
   imports: [
@@ -17,12 +17,12 @@ import { AuditLogSyncTask } from './tasks/audit-log-sync.task'
     SharepointIntegrationModule,
   ],
   providers: [
-    AuditLogQueryService,
-    AuditLogSyncService,
+    SharepointAuditLogQueryService,
+    SharepointAuditLogSyncService,
     SyncLockService,
     AuditLogRepository,
-    AuditLogSyncTask,
+    SharepointAuditLogSyncTask,
   ],
-  exports: [AuditLogQueryService],
+  exports: [SharepointAuditLogQueryService],
 })
-export class AuditLogSyncModule {}
+export class SharepointAuditLogSyncModule {}
