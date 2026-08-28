@@ -5,9 +5,9 @@ import { DatabaseModule } from '@core/database/database.module'
 import { HttpClientModule } from '@core/http-client/http-client.module'
 import { LoggerModule } from '@core/logger/logger.module'
 import { EncryptionModule } from '@modules/encryption/encryption.module'
-import { SharepointIntegrationModule } from '@modules/sharepoint-integration/sharepoint-integration.module'
-import { SharepointDashboardModule } from '@modules/sharepoint-dashboard/sharepoint-dashboard.module'
 import { SharepointAuditLogSyncModule } from '@modules/sharepoint-audit-log-sync/sharepoint-audit-log-sync.module'
+import { SharepointDashboardModule } from '@modules/sharepoint-dashboard/sharepoint-dashboard.module'
+import { SharepointIntegrationModule } from '@modules/sharepoint-integration/sharepoint-integration.module'
 import { Module } from '@nestjs/common'
 import { APP_FILTER, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core'
 import { ScheduleModule } from '@nestjs/schedule'
@@ -19,7 +19,9 @@ import { ZodValidationPipe } from 'nestjs-zod'
     CoreConfigModule,
     DatabaseModule,
     HttpClientModule,
-    SharepointIntegrationModule, SharepointDashboardModule, SharepointAuditLogSyncModule,
+    SharepointIntegrationModule,
+    SharepointDashboardModule,
+    SharepointAuditLogSyncModule,
     LoggerModule,
     EncryptionModule,
     ScheduleModule.forRoot(),
