@@ -7,9 +7,9 @@ import { Repository } from 'typeorm'
 
 import { SharepointContentDto } from '../../sharepoint-integration/dto/sharepoint-management.dto'
 import { SharepointIntegrationService } from '../../sharepoint-integration/sharepoint-integration.service'
-import { SharepointAuditLogSyncService } from '../sharepoint-audit-log-sync.service'
 import { SYNC_CONFIG } from '../constants/sync.constant'
 import { AuditLogSyncState } from '../entities/audit-log-sync-state.entity'
+import { SharepointAuditLogSyncService } from '../sharepoint-audit-log-sync.service'
 import { SyncLockService } from '../sync-lock.service'
 
 @Injectable()

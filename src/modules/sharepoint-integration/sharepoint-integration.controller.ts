@@ -15,7 +15,9 @@ import { SharepointIntegrationService } from './sharepoint-integration.service'
 @ApiTags('SharePoint Integration')
 @Controller('api/sharepoint')
 export class SharepointIntegrationController {
-  constructor(private readonly sharepointService: SharepointIntegrationService) {}
+  constructor(
+    private readonly sharepointService: SharepointIntegrationService,
+  ) {}
 
   /**
    * Endpoint to verify the connection status to the SharePoint API.

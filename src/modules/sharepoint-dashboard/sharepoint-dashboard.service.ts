@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common'
 
-import { SharepointAuditLogQueryService } from '../sharepoint-audit-log-sync/sharepoint-audit-log-query.service'
 import { AuditLog } from '../sharepoint-audit-log-sync/entities/audit-log.entity'
+import { SharepointAuditLogQueryService } from '../sharepoint-audit-log-sync/sharepoint-audit-log-query.service'
 import { GetAuditLogsDto } from './dto/get-audit-logs.dto'
 
 @Injectable()
