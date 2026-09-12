@@ -1,6 +1,10 @@
-import { Injectable } from '@nestjs/common'
+import { Injectable, Logger } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
+import { InfraWatermarkService } from '@platform/infra-watermark/infra-watermark.service'
 import { Repository } from 'typeorm'
+
+import { SYNC_CONFIG } from './constants/sync.constant'
+import { AuditLog } from './entities/audit-log.entity'
 
 export interface AuditLogQueryOptions {
   operation?: string[]
@@ -13,22 +17,25 @@ export interface AuditLogQueryOptions {
   page?: number
   limit?: number
 }
-import { SYNC_CONFIG } from './constants/sync.constant'
-import { AuditLog } from './entities/audit-log.entity'
-import { AuditLogSyncState } from './entities/audit-log-sync-state.entity'
 
 @Injectable()
 export class SharepointAuditLogQueryService {
+  private readonly logger = new Logger(SharepointAuditLogQueryService.name)
+
   constructor(
     @InjectRepository(AuditLog)
     private readonly auditLogRepository: Repository<AuditLog>,
-    @InjectRepository(AuditLogSyncState)
-    private readonly auditLogSyncStateRepository: Repository<AuditLogSyncState>,
+    private readonly infraWatermarkService: InfraWatermarkService,
   ) {}
 
   async queryLogs(
     options: AuditLogQueryOptions,
   ): Promise<[AuditLog[], number]> {
+    this.logger.log(
+      { action: 'db_query_logs', filters: options },
+      'Querying audit logs from database',
+    )
+
     const {
       operation,
       userId,
@@ -92,9 +99,8 @@ export class SharepointAuditLogQueryService {
   }
 
   async getSyncWatermark(): Promise<Date | null> {
-    const watermark = await this.auditLogSyncStateRepository.findOne({
-      where: { key: SYNC_CONFIG.STATE_WATERMARK_KEY },
-    })
-    return watermark?.value || null
+    return this.infraWatermarkService.getWatermark(
+      SYNC_CONFIG.SHAREPOINT_LAST_SYNC_TIME_KEY,
+    )
   }
 }

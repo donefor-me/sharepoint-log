@@ -1,7 +1,8 @@
 import { withRetry } from '@common/utils/http-retry.util'
 import { EnvironmentVariables } from '@core/config/env.validation'
 import { HttpClientService } from '@core/http-client/http-client.service'
-import { Injectable } from '@nestjs/common'
+import { getTraceId } from '@core/logger/logger.context'
+import { Injectable, Logger } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import * as qs from 'qs'
 
@@ -17,6 +18,7 @@ import { SharepointApiException } from './exceptions/sharepoint-api.exception'
 import { SharepointTokenCacheRepository } from './repositories/sharepoint-token-cache.repository'
 @Injectable()
 export class SharepointIntegrationService {
+  private readonly logger = new Logger(SharepointIntegrationService.name)
   private readonly tenantId: string
   private readonly ALLOWED_API_PREFIX = 'https://manage.office.com/api/v1.0/'
 
@@ -30,8 +32,18 @@ export class SharepointIntegrationService {
 
   private async getToken(): Promise<string> {
     const cachedToken = await this.tokenCacheRepository.getValidToken()
-    if (cachedToken) return cachedToken
+    if (cachedToken) {
+      this.logger.debug(
+        { action: 'sp_token_cache_hit' },
+        'Using cached SharePoint API token',
+      )
+      return cachedToken
+    }
 
+    this.logger.log(
+      { action: 'sp_token_cache_miss' },
+      'Fetching new SharePoint API token',
+    )
     const clientId = this.configService.get('O365_CLIENT_ID', { infer: true })
     const clientSecret = this.configService.get('O365_CLIENT_SECRET', {
       infer: true,
@@ -56,6 +68,10 @@ export class SharepointIntegrationService {
         { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } },
       )
       await this.tokenCacheRepository.saveToken(data)
+      this.logger.log(
+        { action: 'sp_token_fetch_success', expiresIn: data.expires_in },
+        'Successfully fetched new SharePoint API token',
+      )
       return data.access_token
     } catch (error: any) {
       throw new SharepointApiException(
@@ -125,6 +141,10 @@ export class SharepointIntegrationService {
     const token = await this.getToken()
     const contentType = SHAREPOINT_CONSTANTS.CONTENT_TYPE_AUDIT_SHAREPOINT
     const url = this.buildApiUrl('subscriptions/start', { contentType })
+    this.logger.log(
+      { action: 'sp_fetch_subscriptions_start', tenantId: this.tenantId },
+      'Starting SharePoint activity subscription',
+    )
     try {
       return await this.httpClient.post<SharepointSubscriptionDto>(url, null, {
         headers: { Authorization: `Bearer ${token}` },
@@ -184,6 +204,10 @@ export class SharepointIntegrationService {
         'Invalid contentUri: must be an Office 365 Management API URL',
       )
     }
+    this.logger.debug(
+      { action: 'sp_fetch_content_start', contentUri, traceId: getTraceId() },
+      'Fetching SharePoint activity content',
+    )
     return this.authenticatedRequest<SharepointActivityDto[]>('get', contentUri)
   }
 

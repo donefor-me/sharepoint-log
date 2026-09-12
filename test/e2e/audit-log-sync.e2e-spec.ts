@@ -4,26 +4,25 @@ import { getRepositoryToken } from '@nestjs/typeorm'
 import { randomUUID } from 'crypto'
 import { DataSource, Repository } from 'typeorm'
 
-import { LoggerModule } from '../src/core/logger/logger.module'
-import { EncryptionService } from '../src/modules/encryption/encryption.service'
-import { AuditLogDlqStatus } from '../src/modules/sharepoint-audit-log-sync/constants/dlq-status.constant'
-import { SYNC_CONFIG } from '../src/modules/sharepoint-audit-log-sync/constants/sync.constant'
-import { AuditLog } from '../src/modules/sharepoint-audit-log-sync/entities/audit-log.entity'
-import { AuditLogDlq } from '../src/modules/sharepoint-audit-log-sync/entities/audit-log-dlq.entity'
-import { AuditLogSyncState } from '../src/modules/sharepoint-audit-log-sync/entities/audit-log-sync-state.entity'
-import { SharepointAuditLogSyncModule } from '../src/modules/sharepoint-audit-log-sync/sharepoint-audit-log-sync.module'
-import { SharepointAuditLogSyncService } from '../src/modules/sharepoint-audit-log-sync/sharepoint-audit-log-sync.service'
-import { SyncLockService } from '../src/modules/sharepoint-audit-log-sync/sync-lock.service'
-import { SharepointAuditLogSyncTask } from '../src/modules/sharepoint-audit-log-sync/tasks/sharepoint-audit-log-sync.task'
-import { SharepointIntegrationService } from '../src/modules/sharepoint-integration/sharepoint-integration.service'
-import { TestDatabaseModule } from './utils/test-database.module'
+import { EncryptionService } from '../../src/modules/encryption/encryption.service'
+import { AuditLogDlqStatus } from '../../src/modules/sharepoint-audit-log-sync/constants/dlq-status.constant'
+import { SYNC_CONFIG } from '../../src/modules/sharepoint-audit-log-sync/constants/sync.constant'
+import { AuditLog } from '../../src/modules/sharepoint-audit-log-sync/entities/audit-log.entity'
+import { AuditLogDlq } from '../../src/modules/sharepoint-audit-log-sync/entities/audit-log-dlq.entity'
+import { SharepointAuditLogSyncModule } from '../../src/modules/sharepoint-audit-log-sync/sharepoint-audit-log-sync.module'
+import { SharepointAuditLogSyncService } from '../../src/modules/sharepoint-audit-log-sync/sharepoint-audit-log-sync.service'
+import { SharepointAuditLogSyncTask } from '../../src/modules/sharepoint-audit-log-sync/tasks/sharepoint-audit-log-sync.task'
+import { SharepointIntegrationService } from '../../src/modules/sharepoint-integration/sharepoint-integration.service'
+import { InfraDistributedLockService } from '../../src/platform/infra-distributed-lock/infra-distributed-lock.service'
+import { InfraWatermark } from '../../src/platform/infra-watermark/entities/infra-watermark.entity'
+import { TestDatabaseModule } from '../utils/test-database.module'
 
 describe('AuditLogSync Workflow (e2e)', () => {
   let dataSource: DataSource
   let moduleFixture: TestingModule
   let syncTask: SharepointAuditLogSyncTask
   let syncService: SharepointAuditLogSyncService
-  let syncStateRepo: Repository<AuditLogSyncState>
+  let watermarkRepo: Repository<InfraWatermark>
   let auditLogRepo: Repository<AuditLog>
   let dlqRepo: Repository<AuditLogDlq>
 
@@ -32,8 +31,8 @@ describe('AuditLogSync Workflow (e2e)', () => {
     fetchActivityContent: jest.fn(),
   }
 
-  const mockSyncLockService = {
-    acquire: jest.fn().mockResolvedValue(true),
+  const mockDistributedLockService = {
+    acquire: jest.fn().mockResolvedValue('mock-uuid-123'),
     renewLock: jest.fn().mockResolvedValue(true),
     release: jest.fn(),
   }
@@ -69,21 +68,25 @@ describe('AuditLogSync Workflow (e2e)', () => {
   })
 
   async function resetDb() {
-    await syncStateRepo.clear()
+    await watermarkRepo.clear()
     await auditLogRepo.clear()
     await dlqRepo.clear()
   }
 
   beforeAll(async () => {
     moduleFixture = await Test.createTestingModule({
-      imports: [LoggerModule, TestDatabaseModule, SharepointAuditLogSyncModule],
+      imports: [TestDatabaseModule, SharepointAuditLogSyncModule],
     })
       .overrideProvider(SharepointIntegrationService)
-      .useValue(mockSharepointIntegrationService)
+      .useValue(
+        mockSharepointIntegrationService as unknown as SharepointIntegrationService,
+      )
       .overrideProvider(EncryptionService)
       .useValue({ encrypt: jest.fn(), decrypt: jest.fn() })
-      .overrideProvider(SyncLockService)
-      .useValue(mockSyncLockService)
+      .overrideProvider(InfraDistributedLockService)
+      .useValue(
+        mockDistributedLockService as unknown as InfraDistributedLockService,
+      )
       .overrideProvider(Logger)
       .useValue(mockLogger)
       .compile()
@@ -94,8 +97,8 @@ describe('AuditLogSync Workflow (e2e)', () => {
     syncService = moduleFixture.get<SharepointAuditLogSyncService>(
       SharepointAuditLogSyncService,
     )
-    syncStateRepo = moduleFixture.get<Repository<AuditLogSyncState>>(
-      getRepositoryToken(AuditLogSyncState),
+    watermarkRepo = moduleFixture.get<Repository<InfraWatermark>>(
+      getRepositoryToken(InfraWatermark),
     )
     auditLogRepo = moduleFixture.get<Repository<AuditLog>>(
       getRepositoryToken(AuditLog),
@@ -116,8 +119,8 @@ describe('AuditLogSync Workflow (e2e)', () => {
 
   beforeEach(async () => {
     jest.clearAllMocks()
-    mockSyncLockService.acquire.mockResolvedValue(true)
-    mockSyncLockService.renewLock.mockResolvedValue(true)
+    mockDistributedLockService.acquire.mockResolvedValue('mock-uuid-123')
+    mockDistributedLockService.renewLock.mockResolvedValue(true)
     await resetDb()
   })
 
@@ -140,10 +143,10 @@ describe('AuditLogSync Workflow (e2e)', () => {
           expect.objectContaining({ startTime: expect.any(String) }),
         )
 
-        const state = await syncStateRepo.findOne({
-          where: { key: SYNC_CONFIG.STATE_WATERMARK_KEY },
+        const state = await watermarkRepo.findOne({
+          where: { key: SYNC_CONFIG.SHAREPOINT_LAST_SYNC_TIME_KEY },
         })
-        const currentWatermarkMs = state!.value!.getTime()
+        const currentWatermarkMs = state!.timestampValue!.getTime()
         if (lastWatermarkMs !== 0) {
           if (i < 6)
             expect(currentWatermarkMs - lastWatermarkMs).toBe(ONE_DAY_MS)
@@ -156,8 +159,8 @@ describe('AuditLogSync Workflow (e2e)', () => {
     it('FS-02: Edge Case Không có log nào - Vẫn tiến watermark bình thường', async () => {
       mockSharepointIntegrationService.fetchAllLogs.mockResolvedValue([])
       await syncTask.handleForwardSync()
-      const state = await syncStateRepo.findOne({
-        where: { key: SYNC_CONFIG.STATE_WATERMARK_KEY },
+      const state = await watermarkRepo.findOne({
+        where: { key: SYNC_CONFIG.SHAREPOINT_LAST_SYNC_TIME_KEY },
       })
       expect(state).toBeDefined()
     })
@@ -386,14 +389,14 @@ describe('AuditLogSync Workflow (e2e)', () => {
 
   describe('Group 5: Concurrency & Locks', () => {
     it('CON-01 & CON-02: Trùng lặp Job Overlap - Abort an toàn', async () => {
-      mockSyncLockService.acquire.mockResolvedValueOnce(false)
+      mockDistributedLockService.acquire.mockResolvedValueOnce(null)
 
       await syncTask.handleForwardSync()
 
       expect(
         mockSharepointIntegrationService.fetchAllLogs,
       ).not.toHaveBeenCalled()
-      expect(mockSyncLockService.release).not.toHaveBeenCalled()
+      expect(mockDistributedLockService.release).not.toHaveBeenCalled()
     })
 
     it('IDP-01: Race Condition - Bỏ qua bản ghi không phải PENDING', async () => {
@@ -423,7 +426,7 @@ describe('AuditLogSync Workflow (e2e)', () => {
 
       await syncTask.handleForwardSync()
 
-      expect(mockSyncLockService.release).toHaveBeenCalledTimes(1)
+      expect(mockDistributedLockService.release).toHaveBeenCalledTimes(1)
 
       const dlqCount = await dlqRepo.count()
       const auditCount = await auditLogRepo.count()
@@ -434,9 +437,9 @@ describe('AuditLogSync Workflow (e2e)', () => {
 
   describe('Group 6: Deep Edge Cases', () => {
     it('EXT-01: Top-level Throw - Quá trình thất bại toàn diện không ảnh hưởng watermark', async () => {
-      await syncStateRepo.save({
-        key: SYNC_CONFIG.STATE_WATERMARK_KEY,
-        value: new Date('2026-08-01T00:00:00Z'),
+      await watermarkRepo.save({
+        key: SYNC_CONFIG.SHAREPOINT_LAST_SYNC_TIME_KEY,
+        timestampValue: new Date('2026-08-01T00:00:00Z'),
       })
       mockSharepointIntegrationService.fetchAllLogs.mockRejectedValue(
         new Error('Sharepoint 500 Internal Error'),
@@ -444,13 +447,13 @@ describe('AuditLogSync Workflow (e2e)', () => {
 
       await syncTask.handleForwardSync()
 
-      const state = await syncStateRepo.findOne({
-        where: { key: SYNC_CONFIG.STATE_WATERMARK_KEY },
+      const state = await watermarkRepo.findOne({
+        where: { key: SYNC_CONFIG.SHAREPOINT_LAST_SYNC_TIME_KEY },
       })
-      expect(state!.value!.toISOString()).toBe(
+      expect(state!.timestampValue!.toISOString()).toBe(
         new Date('2026-08-01T00:00:00Z').toISOString(),
       )
-      expect(mockSyncLockService.release).toHaveBeenCalled()
+      expect(mockDistributedLockService.release).toHaveBeenCalled()
     })
 
     it('EXT-02: Duplicate IDs - Dữ liệu trùng contentId từ list API', async () => {
@@ -556,7 +559,7 @@ describe('AuditLogSync Workflow (e2e)', () => {
       const syncPromise = syncTask.handleForwardSync()
       await syncPromise
 
-      expect(mockSyncLockService.renewLock).toHaveBeenCalled()
+      expect(mockDistributedLockService.renewLock).toHaveBeenCalled()
 
       jest.useRealTimers()
     })
@@ -564,13 +567,94 @@ describe('AuditLogSync Workflow (e2e)', () => {
     it('EXT-08: Empty Input - Null/Empty contentUri handling', async () => {
       mockSharepointIntegrationService.fetchAllLogs.mockResolvedValue([
         { contentUri: '', contentId: 'id_empty_uri' },
-        { contentUri: null as any, contentId: 'id_null_uri' },
+        { contentUri: null as unknown as string, contentId: 'id_null_uri' },
       ])
 
       await syncTask.handleForwardSync()
 
       const count = await dlqRepo.count()
       expect(count).toBe(0)
+    })
+
+    it('EXT-09: Lock acquisition failure - Task skips gracefully if acquire returns null', async () => {
+      const warnSpy = jest.spyOn(Logger.prototype, 'warn').mockImplementation()
+      mockDistributedLockService.acquire.mockResolvedValueOnce(null)
+
+      await syncTask.handleForwardSync()
+
+      expect(
+        mockSharepointIntegrationService.fetchAllLogs,
+      ).not.toHaveBeenCalled()
+      expect(mockDistributedLockService.release).not.toHaveBeenCalled()
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ action: 'forward_sync_skip' }),
+        expect.any(String),
+      )
+      warnSpy.mockRestore()
+    })
+
+    it('EXT-10: Target watermark is less than or equal to current watermark - skips fetch', async () => {
+      const logSpy = jest.spyOn(Logger.prototype, 'log').mockImplementation()
+      const now = new Date()
+      // Make the current watermark slightly ahead of the safeNow target
+      const watermarkDate = new Date(
+        now.getTime() - SYNC_CONFIG.ZERO_LAG_MINUTES * 60_000 + 10000,
+      )
+
+      await watermarkRepo.save({
+        key: SYNC_CONFIG.SHAREPOINT_LAST_SYNC_TIME_KEY,
+        timestampValue: watermarkDate,
+      })
+
+      await syncTask.handleForwardSync()
+
+      expect(
+        mockSharepointIntegrationService.fetchAllLogs,
+      ).not.toHaveBeenCalled()
+      expect(logSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ action: 'forward_sync_caught_up' }),
+        expect.any(String),
+      )
+      logSpy.mockRestore()
+    })
+
+    it('EXT-11: Background renewLock interval throws exception - caught and logged', async () => {
+      const errorSpy = jest
+        .spyOn(Logger.prototype, 'error')
+        .mockImplementation()
+      jest.useFakeTimers({ doNotFake: ['nextTick', 'setImmediate'] })
+
+      const error = new Error('Renew lock failed error')
+      mockDistributedLockService.renewLock.mockRejectedValueOnce(error)
+
+      mockSharepointIntegrationService.fetchAllLogs.mockResolvedValue([
+        { contentUri: 'uri_slow', contentId: 'id_slow' },
+      ])
+      mockSharepointIntegrationService.fetchActivityContent.mockImplementation(
+        (uri) => {
+          // Advance timers to trigger the setInterval inside handleForwardSync
+          jest.advanceTimersByTime(65 * 1000)
+          return Promise.resolve([createMockActivity(uri)])
+        },
+      )
+
+      await syncTask.handleForwardSync()
+
+      expect(mockDistributedLockService.renewLock).toHaveBeenCalled()
+
+      // Wait for any pending promises (like the catch block in renewLock)
+      await new Promise((resolve) => process.nextTick(resolve))
+
+      expect(errorSpy as unknown as jest.Mock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: 'renew_lock_failed',
+          error: 'Renew lock failed error',
+        }),
+        expect.any(String),
+      )
+
+      errorSpy.mockRestore()
+      jest.useRealTimers()
     })
   })
 })

@@ -12,6 +12,7 @@ export const SYNC_CONFIG = {
   CONCURRENT_DOWNLOADS: 15,
   RECONCILIATION_FETCH_CONCURRENCY: 3,
   LOCK_TTL_MS: 30 * 60 * 1000,
-  STATE_WATERMARK_KEY: 'sharepoint_audit_forward',
-  LOCK_KEY: 'sharepoint_sync_lock',
+
+  SHAREPOINT_LAST_SYNC_TIME_KEY: 'sharepoint_audit_forward',
+  SHAREPOINT_SYNC_LOCK_KEY: 'sharepoint_sync_lock',
 } as const

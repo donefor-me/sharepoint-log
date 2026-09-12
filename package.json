@@ -8,14 +8,15 @@
   "scripts": {
     "build": "nest build",
     "typeorm": "typeorm-ts-node-commonjs",
-    "db:migration:generate": "typeorm-ts-node-commonjs migration:generate -d ./typeorm.config.ts",
-    "db:migration:run": "typeorm-ts-node-commonjs migration:run -d ./typeorm.config.ts",
-    "db:migration:revert": "typeorm-ts-node-commonjs migration:revert -d ./typeorm.config.ts",
+    "db:migration:generate": "node -r tsconfig-paths/register -r ts-node/register ./node_modules/.bin/typeorm migration:generate -d ./typeorm.config.ts",
+    "db:migration:run": "node -r tsconfig-paths/register -r ts-node/register ./node_modules/.bin/typeorm migration:run -d ./typeorm.config.ts",
+    "db:migration:revert": "node -r tsconfig-paths/register -r ts-node/register ./node_modules/.bin/typeorm migration:revert -d ./typeorm.config.ts",
     "format": "prettier --write .",
     "start": "node dist/main.js",
     "start:dev": "node --env-file=.env -r @swc-node/register --watch src/main.ts",
-    "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
-    "test:e2e": "jest --config ./test/jest-e2e.json",
+    "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" \"*.ts\" --fix",
+    "test": "jest --runInBand",
+    "test:e2e": "jest --config ./test/jest-e2e.json --runInBand",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

@@ -1,5 +1,6 @@
 import { chunkArray, runPool } from '@common/utils/array.util'
 import { withRetry } from '@common/utils/http-retry.util'
+import { getTraceId } from '@core/logger/logger.context'
 import { Injectable, Logger } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { DataSource, In, Repository } from 'typeorm'
@@ -32,6 +33,14 @@ export class SharepointAuditLogSyncService {
    */
   async insertToDlq(files: SharepointContentDto[]): Promise<void> {
     if (files.length > 0) {
+      this.logger.warn(
+        {
+          action: 'dlq_insert_start',
+          count: files.length,
+          traceId: getTraceId(),
+        },
+        'Inserting files to Dead Letter Queue (PENDING state)',
+      )
       const entities = files.map((file) => {
         const entity = new AuditLogDlq()
         entity.contentUri = file.contentUri
@@ -74,7 +83,11 @@ export class SharepointAuditLogSyncService {
       }
 
       this.logger.log(
-        { action: 'dlq_process_batch', count: pendingLogs.length },
+        {
+          action: 'dlq_process_batch',
+          count: pendingLogs.length,
+          traceId: getTraceId(),
+        },
         '[Sync:DLQ] Processing batch of pending logs',
       )
 
@@ -136,6 +149,14 @@ export class SharepointAuditLogSyncService {
 
     await this.dataSource.transaction(async (tx) => {
       for (const chunk of chunkArray(rawLogs, 1000)) {
+        this.logger.debug(
+          {
+            action: 'db_upsert_chunk_start',
+            chunkSize: chunk.length,
+            traceId: getTraceId(),
+          },
+          'Upserting chunk of audit logs to DB',
+        )
         const entities = chunk
           .map((log: any) => ({
             microsoftId: String(log.Id),

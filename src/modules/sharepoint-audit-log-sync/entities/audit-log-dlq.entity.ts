@@ -1,6 +1,6 @@
+import { AbstractEntity } from '@common/entities/abstract.entity'
 import { Column, Entity } from 'typeorm'
 
-import { AbstractEntity } from '../../../common/entities/abstract.entity'
 import { AuditLogDlqStatus } from '../constants/dlq-status.constant'
 
 @Entity('audit_log_dlq')

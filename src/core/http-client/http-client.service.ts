@@ -50,33 +50,6 @@ export class HttpClientService {
     return this.request<T>('POST', url, data, config)
   }
 
-  /**
-   * Sends an HTTP PUT request.
-   *
-   * @param {string} url - The URL to send the request to.
-   * @param {any} [data] - The data to be sent as the request body.
-   * @param {AxiosRequestConfig} [config] - Optional Axios request configuration.
-   * @returns {Promise<T>} A promise that resolves to the response data.
-   */
-  async put<T>(
-    url: string,
-    data?: any,
-    config?: AxiosRequestConfig,
-  ): Promise<T> {
-    return this.request<T>('PUT', url, data, config)
-  }
-
-  /**
-   * Sends an HTTP DELETE request.
-   *
-   * @param {string} url - The URL to send the request to.
-   * @param {AxiosRequestConfig} [config] - Optional Axios request configuration.
-   * @returns {Promise<T>} A promise that resolves to the response data.
-   */
-  async delete<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
-    return this.request<T>('DELETE', url, undefined, config)
-  }
-
   private async request<T>(
     method: string,
     url: string,

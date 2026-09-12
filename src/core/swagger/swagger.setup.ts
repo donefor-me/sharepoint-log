@@ -20,7 +20,6 @@ export function setupSwagger(
     .setTitle('SharePoint Log Dashboard API')
     .setDescription('API documentation for the SharePoint Log Dashboard')
     .setVersion('1.0.0')
-    .addBearerAuth()
     .build()
 
   const document = SwaggerModule.createDocument(app, swaggerConfig)

@@ -28,12 +28,7 @@ export const envSchema = z
       .string()
       .min(16, 'Must be at least 16 characters')
       .max(128, 'Max 128 characters'),
-    JWT_SECRET: z.string().min(8),
-    JWT_EXPIRES_IN: z.string().default('15m'),
-    JWT_REFRESH_SECRET: z.string().min(8),
-    JWT_REFRESH_EXPIRES_IN: z.string().default('7d'),
     CORS_ORIGIN: z.string().transform((v) => v.split(',').map((s) => s.trim())),
-    ADMIN_DEFAULT_PASSWORD: z.string().optional(),
   })
   .refine((env) => Buffer.byteLength(env.TOKEN_ENCRYPTION_KEY, 'utf-8') >= 32, {
     message: 'TOKEN_ENCRYPTION_KEY must encode to at least 32 bytes',

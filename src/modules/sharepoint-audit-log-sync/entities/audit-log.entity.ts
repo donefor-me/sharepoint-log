@@ -1,6 +1,6 @@
+import { AbstractEntity } from '@common/entities/abstract.entity'
 import { Column, Entity, Index } from 'typeorm'
 
-import { AbstractEntity } from '../../../common/entities/abstract.entity'
 import type { Office365WorkloadType } from '../constants/workload.constant'
 
 @Entity('audit_logs')
